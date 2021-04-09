@@ -1,6 +1,9 @@
 package com.taixue.xiaomingbot.api.command;
 
-public abstract class CommandSender {
+import com.taixue.xiaomingbot.api.base.XiaomingObject;
+import com.taixue.xiaomingbot.api.bot.XiaomingBot;
+
+public abstract class CommandSender extends XiaomingObject {
     public static final String CONSOLE_NAME = "CONSOLE";
 
     protected final String name;
@@ -13,16 +16,16 @@ public abstract class CommandSender {
         return name;
     }
 
-    public abstract boolean hasPermission();
+    public abstract boolean hasPermission(String node);
 
     public abstract void sendMessage(String message);
 
     public void sendError(String message) {
-        sendMessage("[ERROR] " + message);
+        sendMessage("(。﹏。*)：" + message);
     }
 
     public void sendWarn(String message) {
-        sendMessage("[WARN] " + message);
+        sendMessage("Σ(っ °Д °;)っ：" + message);
     }
 
     public void sendMessage(String format, Object... arguments) {

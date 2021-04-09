@@ -253,7 +253,6 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
 
                 if (!isLoaded(property.getName())) {
                     loaders.add(new PluginLoader(pluginFile, property));
-                    LOGGER.info("已登记插件：{}", property.getName());
                     return true;
                 }
                 else {
@@ -277,7 +276,7 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
             if (pluginFile.getName().endsWith(".jar")) {
                 pushUnloadLoader(pluginFile, loaders);
             }
-            else {
+            else if (!pluginFile.isDirectory()) {
                 LOGGER.error("插件文件夹：" + directory.getAbsolutePath() + " 中出现了非 jar 类型的文件：" + pluginFile.getName());
             }
         }

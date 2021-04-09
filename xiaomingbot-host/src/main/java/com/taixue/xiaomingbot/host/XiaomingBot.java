@@ -1,10 +1,14 @@
 package com.taixue.xiaomingbot.host;
 
+import com.taixue.xiaomingbot.api.command.CommandManager;
 import com.taixue.xiaomingbot.api.command.CommandSender;
 import com.taixue.xiaomingbot.api.listener.interactor.GroupInteractorManager;
 import com.taixue.xiaomingbot.api.listener.interactor.PrivateInteractorManager;
+import com.taixue.xiaomingbot.api.permission.BasePermissionSystem;
 import com.taixue.xiaomingbot.host.commandsender.ConsoleCommandSender;
+import com.taixue.xiaomingbot.host.permission.PermissionSystem;
 import com.taixue.xiaomingbot.host.plugin.PluginManager;
+import com.taixue.xiaomingbot.util.Emojis;
 import love.forte.common.configuration.Configuration;
 import love.forte.simbot.annotation.SimbotApplication;
 import love.forte.simbot.core.SimbotApp;
@@ -24,9 +28,19 @@ public class XiaomingBot
         protected static final XiaomingBot INSTANCE = new XiaomingBot();
     }
 
-    protected File pluginDirectory = new File("plugins");
+    protected static final File PLUGIN_DIRECTORY = new File("plugins");
 
-    protected PluginManager pluginManager = new PluginManager(pluginDirectory);
+    protected static final File CONFIG_DIRECTORY = new File("config");
+
+    protected static final File EMOJI_DIRECTORY = new File("emoji");
+
+    static {
+        PLUGIN_DIRECTORY.mkdirs();
+        CONFIG_DIRECTORY.mkdirs();
+        EMOJI_DIRECTORY.mkdirs();
+    }
+
+    protected PluginManager pluginManager = new PluginManager(PLUGIN_DIRECTORY);
 
     protected CommandSender commandSender = new ConsoleCommandSender();
 
@@ -34,16 +48,18 @@ public class XiaomingBot
 
     protected GroupInteractorManager groupInteractorManager = new GroupInteractorManager();
 
-    private void createDirectories() {
-        pluginDirectory.mkdirs();
-    }
+    protected CommandManager commandManager = new CommandManager();
+
+    protected PermissionSystem permissionSystem = PermissionSystem.forFile(new File(CONFIG_DIRECTORY, "permissions.json"));
+
+    protected Emojis emojis = new Emojis(EMOJI_DIRECTORY);
 
     public static XiaomingBot getInstance() {
         return Holder.INSTANCE;
     }
 
     public File getPluginDirectory() {
-        return pluginDirectory;
+        return PLUGIN_DIRECTORY;
     }
 
     @Override
@@ -62,9 +78,23 @@ public class XiaomingBot
     }
 
     @Override
+    public CommandManager getCommandManager() {
+        return commandManager;
+    }
+
+    @Override
+    public BasePermissionSystem getPermissionSystem() {
+        return permissionSystem;
+    }
+
+    @Override
+    public Emojis getEmojis() {
+        return emojis;
+    }
+
+    @Override
     public void post(@NotNull SimbotContext context) {
         XiaomingBot instance = getInstance();
-        instance.createDirectories();
         instance.getPluginManager().loadAllPlugins(instance.commandSender);
     }
 

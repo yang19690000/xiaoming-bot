@@ -1,5 +1,6 @@
 package com.taixue.xiaomingbot.host.listener;
 
+import com.taixue.xiaomingbot.host.commandsender.GroupCommandSender;
 import com.taixue.xiaomingbot.host.listener.dispatcher.GroupDispatcher;
 import com.taixue.xiaomingbot.api.listener.interactor.GroupInteractor;
 import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUserData;
@@ -9,17 +10,19 @@ import love.forte.simbot.annotation.OnGroup;
 import love.forte.simbot.api.message.events.GroupMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
+/**
+ * @author Chuanwise
+ */
 @Beans
 public class GroupListener extends GroupDispatcher<GroupDispatcherUserData> {
     @Override
     public boolean parseCommand(GroupDispatcherUserData userData, MsgSender msgSender) {
-        return false;
+        return XiaomingBot.getInstance().getCommandManager().onCommand(
+                new GroupCommandSender(msgSender, userData.getGroup(), userData.getQQ()), userData.getMessage());
     }
 
     @Override
-    public void onNullProcessor(GroupDispatcherUserData userData, MsgSender msgSender) {
-        atTell(userData, "小明不知道这是什么意思qwq！", msgSender);
-    }
+    public void onNullProcessor(GroupDispatcherUserData userData, MsgSender msgSender) {}
 
     @Override
     public GroupDispatcherUserData newUserData() {

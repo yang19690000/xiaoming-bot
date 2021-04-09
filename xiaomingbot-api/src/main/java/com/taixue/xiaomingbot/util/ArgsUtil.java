@@ -28,11 +28,16 @@ public class ArgsUtil {
                         current.setLength(0);
                     }
                     if (ch == '\"') {
-                        state = 2;
+                        state = 3;
                         continue;
                     }
                     if (ch == '“') {
-                        state = 3;
+                        state = 4;
+                        continue;
+                    }
+                    if (ch == '{') {
+                        current.append(ch);
+                        state = 5;
                         continue;
                     }
                     current.append(ch);
@@ -63,6 +68,13 @@ public class ArgsUtil {
                     }
                     else {
                         current.append(ch);
+                    }
+                    break;
+                    // 英文大括号参数内部
+                case 5:
+                    current.append(ch);
+                    if (ch == '}') {
+                        state = 0;
                     }
                     break;
             }
