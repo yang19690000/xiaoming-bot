@@ -1,4 +1,4 @@
-package com.taixue.xiaomingbot.host.commandsender;
+package com.taixue.xiaomingbot.host.command.sender;
 
 import catcode.CatCodeUtil;
 import com.taixue.xiaomingbot.api.bot.XiaomingBot;
@@ -23,5 +23,15 @@ public class GroupCommandSender extends com.taixue.xiaomingbot.api.command.Group
     @Override
     public void sendMessage(String message) {
         msgSender.SENDER.sendGroupMsg(group, CatCodeUtil.getInstance().getStringTemplate().at(qq) + message);
+    }
+
+    @Override
+    public boolean hasPermission(String node) {
+        return com.taixue.xiaomingbot.host.XiaomingBot.getInstance().getPermissionSystem().hasPermission(qq, node);
+    }
+
+    @Override
+    public MsgSender getMsgSender() {
+        return msgSender;
     }
 }

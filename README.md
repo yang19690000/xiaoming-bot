@@ -16,22 +16,34 @@ import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 public class XiaomingLexicons extends XiaomingPlugin {
 }
 ```
-这就是一个最简单的小明插件，可以被小明加载，但它没有任何功能。
+这就是一个最简单的小明插件，可以被小明加载，但它还没有任何功能。
 #### 打包导出
 小明加载插件时会先读取资源文件 `plugin.json`，所以你应该在 `jar` 中加入该文件，其内容应为：
 ```json
 {
-  "name": "Lexicons",   // 插件名（选填），默认值为 jar 文件名
-  "version": "1.0",     // 版本号（选填），默认值为 (unknown version)
-  "authors": [          // 多个作者（选填）。如果只有一个作者，也可以 "author": "Chuanwise",
-    "Chuanwise"
-  ],
-  "fronts": [           // 前置插件（选填）。若前置插件未全部加载，则你的插件不会被加载。
-  ],
-  "main": "com.taixue.xiaominglexicons.XiaomingLexicons"    // 插件主类（必填）
+  "name": "Lexicons",
+  "version": "1.0",
+  "authors": [ "Chuanwise" ],
+  "fronts": [],
+  "main": "com.taixue.xiaominglexicons.XiaomingLexicons"
 }
 ```
-打包插件后将插件放在小明根目录的 `plugins` 文件夹，重启小明即可。
+##### name（插件名）
+选填，默认值为 jar 文件名
+
+##### version（版本号）
+选填，默认值为 (unknown version)
+
+##### authors 或 author（作者）
+选填，`author` 是字符串，`authors` 是字符串列表。
+
+##### fronts（前置插件）
+选填。若前置插件未全部加载，则你的插件不会被加载。
+
+##### main（插件主类）
+必填，否则插件无法加载。
+
+打包插件后将插件放在小明根目录的 `plugins` 文件夹，输入 `插件 加载 {插件JAR文件名}` 即可载入该插件。
 #### 更进一步
 你可以在插件主类通过重写 `onEnable` 方法，让插件在刚加载时执行一些操作。它们通常是读取你的相关文件、创建和注册群聊交互器、指令执行器等。例如：
 ```java
@@ -49,16 +61,19 @@ public class XiaomingLexicons extends XiaomingPlugin {
     }
 }
 ```
-类似的，你还可以重写很多方法，它们被执行的时机如下：
-方法名|形参列表|返回值|执行时机
----|---|---|---
-onEnable|无|无|插件刚被加载时
-onDisable|无|无|插件被卸载前
+此外还有很多可供重写或调用的方法，请参阅下文：
 
-#### 插件间通信
+### 类
+#### XiaomingPlugin
+插件主类的父类。
+
+`hook` 系方法请谨慎调用，近期可能会调整。
+![UML](./resources/XiaomingPlugin.png "UML")
+
+<!-- #### 插件间通信
 小明的插件间通信采用基于 `API` 的的通信方式。方式主要有两种：直接访问插件和通过事先设计好的 API。我们推荐你采用第二种方法。
 
-#### 直接访问插件
+##### 直接访问插件
 通过 `getXiaomingBot().getPluginManager().getPlugin("插件名")` 便可获得一个被加载在小明的插件。其类型为 `XiaomingPlugin`，需手动转换为其主类类型。例如：
 ```java
 package wiki.chuanwise.myxiaomingplugin;
@@ -77,7 +92,7 @@ public class MyXiaomingPlugin extends XiaomingPlugin {
 }
 ```
 
-#### 更为推荐的 hook 通信方式
+##### 更为推荐的 hook 通信方式
 如果你希望其他插件主动与你通信，你需要写一个通信所用的类，其继承自 `com.taixue.xiaomingbot.api.plugin.HookHolder`。例如：
 ```java
 package com.taixue.xiaominglexicons.hook;
@@ -136,4 +151,4 @@ public class MyXiaomingPlugin extends XiaomingPlugin {
         }
     }
 }
-```
+``` -->

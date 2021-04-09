@@ -1,12 +1,12 @@
-package com.taixue.xiaomingbot.host.permission;
+package com.taixue.xiaomingbot.api.permission;
 
-import com.taixue.xiaomingbot.api.permission.BasePermissionUserNode;
+import com.taixue.xiaomingbot.util.PermissionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class PermissionUserNode extends BasePermissionUserNode {
+public class PermissionUserNode {
     protected String group;
     protected List<String> permissions;
 
@@ -38,9 +38,12 @@ public class PermissionUserNode extends BasePermissionUserNode {
             return false;
         }
         for (String per: permissions) {
-//            if (PermissionSystem.(per, node)) {
-//                return true;
-//            }
+            if (per.equals("-" + node)) {
+                return false;
+            }
+            if (PermissionUtil.accessable(per, node)) {
+                return true;
+            }
         }
         return false;
     }

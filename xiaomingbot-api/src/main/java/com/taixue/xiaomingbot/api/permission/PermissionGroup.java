@@ -1,11 +1,9 @@
-package com.taixue.xiaomingbot.host.permission;
-
-import com.taixue.xiaomingbot.api.permission.BasePermissionGroup;
+package com.taixue.xiaomingbot.api.permission;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PermissionGroup extends BasePermissionGroup {
+public class PermissionGroup {
     protected List<String> superGroups = new ArrayList<>();
     protected String alias;
     protected List<String> permissions = new ArrayList<>();
@@ -36,5 +34,9 @@ public class PermissionGroup extends BasePermissionGroup {
 
     public String getAlias() {
         return alias;
+    }
+
+    public void removePermission(String node) {
+        permissions.remove(node);
     }
 }

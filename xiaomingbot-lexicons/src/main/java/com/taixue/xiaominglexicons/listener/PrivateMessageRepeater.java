@@ -18,6 +18,6 @@ public class PrivateMessageRepeater extends PrivateInteractor<PrivateInteractorU
 
     @Override
     public PrivateInteractorUserData newUserData() {
-        return null;
+        return new PrivateInteractorUserData();
     }
 }

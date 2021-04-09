@@ -1,6 +1,6 @@
 package com.taixue.xiaomingbot.host.listener;
 
-import com.taixue.xiaomingbot.host.commandsender.GroupCommandSender;
+import com.taixue.xiaomingbot.host.command.sender.GroupCommandSender;
 import com.taixue.xiaomingbot.host.listener.dispatcher.GroupDispatcher;
 import com.taixue.xiaomingbot.api.listener.interactor.GroupInteractor;
 import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUserData;
@@ -36,7 +36,8 @@ public class GroupListener extends GroupDispatcher<GroupDispatcherUserData> {
 
     @OnGroup
     public void onGroupMessage(GroupMsg groupMsg, MsgSender msgSender) {
-        if (groupMsg.getGroupInfo().getGroupCodeNumber() == 924371658) {
+        long group = groupMsg.getGroupInfo().getGroupCodeNumber();
+        if (XiaomingBot.getInstance().getGroupManager().isGroup("test", group)) {
             dispatch(groupMsg, msgSender);
         }
     }

@@ -4,10 +4,10 @@ import catcode.CatCodeUtil;
 
 import java.io.File;
 
-public class Emojis {
+public class EmojiManager {
     protected final File directory;
 
-    public Emojis(File directory) {
+    public EmojiManager(File directory) {
         this.directory = directory;
     }
 

@@ -21,11 +21,11 @@ public abstract class CommandSender extends XiaomingObject {
     public abstract void sendMessage(String message);
 
     public void sendError(String message) {
-        sendMessage("(。﹏。*)：" + message);
+        sendMessage("(。﹏。*) " + message);
     }
 
     public void sendWarn(String message) {
-        sendMessage("Σ(っ °Д °;)っ：" + message);
+        sendMessage("Σ(っ °Д °;)っ " + message);
     }
 
     public void sendMessage(String format, Object... arguments) {

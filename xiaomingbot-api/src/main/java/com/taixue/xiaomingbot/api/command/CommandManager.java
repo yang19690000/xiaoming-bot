@@ -37,7 +37,7 @@ public class CommandManager {
         commandExecutors.add(executor);
     }
 
-    public void onUloadPlugin(XiaomingPlugin plugin) {
+    public void unloadPlugin(XiaomingPlugin plugin) {
         commandExecutors.removeIf(executor -> executor.getPlugin() == plugin);
     }
 }

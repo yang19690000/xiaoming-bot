@@ -1,5 +1,7 @@
 package com.taixue.xiaomingbot.api.command;
 
+import love.forte.simbot.api.sender.MsgSender;
+
 public abstract class GroupCommandSender extends CommandSender {
     protected final long group, qq;
 
@@ -9,8 +11,13 @@ public abstract class GroupCommandSender extends CommandSender {
         this.qq = qq;
     }
 
-    @Override
-    public boolean hasPermission(String node) {
-        return false;
+    public long getGroup() {
+        return group;
     }
+
+    public long getQq() {
+        return qq;
+    }
+
+    public abstract MsgSender getMsgSender();
 }

@@ -1,9 +1,7 @@
 package com.taixue.xiaominglexicons;
 
-import com.taixue.xiaomingbot.api.bot.XiaomingBot;
 import com.taixue.xiaomingbot.api.command.*;
 import com.taixue.xiaominglexicons.autoreply.AutoReplyItem;
-import love.forte.simbot.api.sender.MsgSender;
 
 import java.util.Objects;
 
@@ -12,7 +10,7 @@ public class LexiconCommandExecutor extends CommandExecutor {
     @RequiredPermission("reply.global.look")
     public void onLookGlobalReply(CommandSender sender,
                                   @CommandParameter("key") String key) {
-        AutoReplyItem globalValue = XiaomingLexicons.plugin.getData().getGlobalValue(key);
+        AutoReplyItem globalValue = XiaomingLexicons.instance.getData().getGlobalValue(key);
         if (Objects.isNull(globalValue)) {
             sender.sendMessage("公共词库中没有词条：{}", key);
         }

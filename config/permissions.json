@@ -1,1 +1,108 @@
-{"groups":{"default":{"alias":"默认权限组","permissions":[],"superGroups":[]}},"users":{}}
+{
+    "groups": {
+        "xiaozhang": {
+            "alias": "校长",
+            "permissions": [],
+            "superGroups": [
+                "operator"
+            ]
+        },
+        "default": {
+            "alias": "默认组",
+            "permissions": [
+                "group.mute.me",
+                "reply.personal.*",
+                "reply.global.add.色图",
+                "reply.global.mutiple",
+                "reply.global.look"
+            ],
+            "superGroups": []
+        },
+        "yiyuan": {
+            "alias": "议员",
+            "permissions": [],
+            "superGroups": [
+                "operator"
+            ]
+        },
+        "nanshufang": {
+            "alias": "南书房",
+            "permissions": [],
+            "superGroups": [
+                "派生"
+            ]
+        },
+        "husband": {
+            "alias": "男朋友",
+            "permissions": [],
+            "superGroups": []
+        },
+        "yingzaosi": {
+            "alias": "营造司",
+            "permissions": [],
+            "superGroups": []
+        },
+        "operator": {
+            "alias": "技术配置员",
+            "permissions": [
+                "*"
+            ],
+            "superGroups": [
+                "default"
+            ]
+        },
+        "zhuxinge": {
+            "alias": "筑心阁",
+            "permissions": [
+                "reply.global.*"
+            ],
+            "superGroups": []
+        }
+    },
+    "users": {
+        "691422759": {
+            "group": "zhuxinge"
+        },
+        "1437100907": {
+            "group": "operator"
+        },
+        "1206097960": {
+            "group": "operator"
+        },
+        "3595853378": {
+            "group": "operator"
+        },
+        "1557039459": {
+            "group": "default",
+            "permissions": [
+                "group.mute.others"
+            ]
+        },
+        "2855487865": {
+            "permissions": [
+                "group.mute.others",
+                "*",
+                "group.mute.others",
+                "group.mute.others"
+            ]
+        },
+        "2980652655": {
+            "group": "yiyuan"
+        },
+        "2735562856": {
+            "group": "default",
+            "permissions": [
+                "group.mute.others"
+            ]
+        },
+        "614867321": {
+            "group": "husband",
+            "permissions": [
+                "*"
+            ]
+        },
+        "1833198904": {
+            "group": "xiaozhang"
+        }
+    }
+}

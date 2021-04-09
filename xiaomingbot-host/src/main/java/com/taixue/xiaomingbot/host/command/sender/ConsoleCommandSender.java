@@ -1,4 +1,4 @@
-package com.taixue.xiaomingbot.host.commandsender;
+package com.taixue.xiaomingbot.host.command.sender;
 
 import com.taixue.xiaomingbot.api.bot.XiaomingBot;
 import com.taixue.xiaomingbot.api.command.CommandSender;

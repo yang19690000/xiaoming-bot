@@ -14,7 +14,7 @@ public class AutoReplyData {
 
     protected Map<String, Map<String, AutoReplyItem>> users;
     protected Map<String, AutoReplyItem> global;
-    protected Map<String, Map<String, AutoReplyItem>> group;
+    protected Map<String, Map<String, AutoReplyItem>> groups;
     protected List<String> illegalKeyRegex, illegalValueRegex;
 
     public static AutoReplyData forFile(File file) throws IOException {
@@ -39,7 +39,7 @@ public class AutoReplyData {
             data.file = file;
             data.users = new HashMap<>();
             data.global = new HashMap<>();
-            data.group = new HashMap<>();
+            data.groups = new HashMap<>();
             try {
                 data.save();
             }
@@ -105,8 +105,8 @@ public class AutoReplyData {
         this.users = users;
     }
 
-    public Map<String, Map<String, AutoReplyItem>> getGroup() {
-        return group;
+    public Map<String, Map<String, AutoReplyItem>> getGroups() {
+        return groups;
     }
 
     public void setGlobal(Map<String, AutoReplyItem> global) {
@@ -117,8 +117,8 @@ public class AutoReplyData {
         return users;
     }
 
-    public void setGroup(Map<String, Map<String, AutoReplyItem>> group) {
-        this.group = group;
+    public void setGroups(Map<String, Map<String, AutoReplyItem>> groups) {
+        this.groups = groups;
     }
 
     public void addGlobal(String key, String answer) {

@@ -30,4 +30,8 @@ public class PrivateInteractorManager {
         }
         return null;
     }
+
+    public void unloadPlugin(XiaomingPlugin plugin) {
+        interactors.removeIf(interactor -> interactor.getPlugin() == plugin);
+    }
 }

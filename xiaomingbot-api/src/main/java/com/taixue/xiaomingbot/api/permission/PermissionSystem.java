@@ -1,21 +1,19 @@
-package com.taixue.xiaomingbot.host.permission;
+package com.taixue.xiaomingbot.api.permission;
 
 import com.alibaba.fastjson.JSON;
-import com.taixue.xiaomingbot.api.permission.BasePermissionGroup;
-import com.taixue.xiaomingbot.api.permission.BasePermissionSystem;
-import com.taixue.xiaomingbot.api.permission.BasePermissionUserNode;
+import com.taixue.xiaomingbot.util.PermissionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
-public class PermissionSystem extends BasePermissionSystem {
+/**
+ * @author Chuanwise
+ */
+public class PermissionSystem {
     protected File file;
 
     public static PermissionSystem forFile(File file) {
@@ -54,50 +52,45 @@ public class PermissionSystem extends BasePermissionSystem {
         return result;
     }
 
-    private Map<String, BasePermissionGroup> groups;
-    private Map<String, BasePermissionUserNode> users;
-    private transient BasePermissionGroup defaultGroup;
+    private Map<String, PermissionGroup> groups;
+    private Map<String, PermissionUserNode> users;
+    private transient PermissionGroup defaultGroup;
 
-    public void setUsers(Map<String, BasePermissionUserNode> users) {
+    public void setUsers(Map<String, PermissionUserNode> users) {
         this.users = users;
     }
 
-    public void setGroups(Map<String, BasePermissionGroup> groups) {
+    public void setGroups(Map<String, PermissionGroup> groups) {
         this.groups = groups;
     }
 
-    public Map<String, BasePermissionUserNode> getUsers() {
+    public Map<String, PermissionUserNode> getUsers() {
         return users;
     }
 
-    public Map<String, BasePermissionGroup> getGroups() {
+    public Map<String, PermissionGroup> getGroups() {
         return groups;
     }
 
-    @Override
     @Nullable
-    public BasePermissionGroup getGroup(String groupName) {
+    public PermissionGroup getGroup(String groupName) {
         return groups.get(groupName);
     }
 
-    @Override
     public boolean hasGroup(String groupName) {
         return getGroup(groupName) != null;
     }
 
-    @Override
-    public void addGroup(String groupName, BasePermissionGroup group) {
+    public void addGroup(String groupName, PermissionGroup group) {
         groups.put(groupName, group);
         save();
     }
 
-    @Override
-    public BasePermissionUserNode getUserNode(long qq) {
+    public PermissionUserNode getUserNode(long qq) {
         return users.get(Long.toString(qq));
     }
 
-    @Override
-    public BasePermissionUserNode getOrNewUserNode(long qq) {
+    public PermissionUserNode getOrNewUserNode(long qq) {
         if (!hasUser(qq)) {
             PermissionUserNode node = new PermissionUserNode();
             node.setPermissions(new ArrayList<>());
@@ -107,26 +100,22 @@ public class PermissionSystem extends BasePermissionSystem {
         return getUserNode(qq);
     }
 
-    @Override
     public void giveUserPermission(long who, String node) {
         getOrNewUserNode(who).addPermission(node);
         save();
     }
 
-    @Override
     public void giveGroupPermission(String groupName, String node) {
-        BasePermissionGroup group = getGroup(groupName);
+        PermissionGroup group = getGroup(groupName);
         group.addPermission(node);
         save();
     }
 
-    @Override
     public boolean hasUser(long qq) {
         return getUserNode(qq) != null;
     }
 
-    @Override
-    public BasePermissionGroup getUserGroup(long qq) {
+    public PermissionGroup getUserGroup(long qq) {
         if (hasUser(qq)) {
             String group = getUserNode(qq).getGroup();
             if (Objects.nonNull(group)) {
@@ -139,7 +128,6 @@ public class PermissionSystem extends BasePermissionSystem {
         }
     }
 
-    @Override
     public void setUserGroup(long qq, String groupName) {
         if ("default".equals(groupName)) {
             users.remove(Long.toString(qq));
@@ -149,24 +137,26 @@ public class PermissionSystem extends BasePermissionSystem {
         }
     }
 
-    @Override
-    public BasePermissionGroup getDefaultGroup() {
-        return defaultGroup;
+    public void removeGroup(String groupName) {
+        groups.remove(groupName);
+        save();
     }
 
-    @Override
-    public boolean hasPermission(BasePermissionGroup group, String node) {
-        return false;
+    public PermissionGroup getDefaultGroup() {
+        return defaultGroup;
     }
 
     public boolean hasPermission(PermissionGroup group, String node) {
         for (String n: group.permissions) {
-            if (isPermission(n, node)) {
+            if (n.equals("-" + node)) {
+                return false;
+            }
+            if (PermissionUtil.accessable(n, node)) {
                 return true;
             }
         }
         for (String superGroupName: group.superGroups) {
-            BasePermissionGroup superGroup = getGroup(superGroupName);
+            PermissionGroup superGroup = getGroup(superGroupName);
             if (Objects.isNull(superGroup)) {
                 System.err.println("找不到权限组：" + superGroupName);
             }
@@ -177,18 +167,42 @@ public class PermissionSystem extends BasePermissionSystem {
         return false;
     }
 
-    @Override
+    public boolean removeUserPermission(long qq, String node) {
+        if (hasPermission(qq, node)) {
+            PermissionUserNode userNode = getOrNewUserNode(qq);
+            userNode.getPermissions().remove(node);
+
+            if (hasPermission(qq, node)) {
+                List<String> permissions = new ArrayList<>();
+                permissions.add('-' + node);
+                if (Objects.nonNull(userNode.getPermissions())) {
+                    permissions.addAll(userNode.getPermissions());
+                }
+                userNode.setPermissions(permissions);
+            }
+            save();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     public boolean hasPermission(long qq, String node) {
-        BasePermissionUserNode permissionUserNode = getUserNode(qq);
+        PermissionUserNode permissionUserNode = getUserNode(qq);
         if (Objects.isNull(permissionUserNode)) {
             return hasPermission(getDefaultGroup(), node);
         }
-        return permissionUserNode.hasPrivatePermission(node) || hasPermission(permissionUserNode.getGroup(), node);
+        else if (permissionUserNode.hasPrivatePermission(node)) {
+            return true;
+        }
+        else {
+            return hasPermission(permissionUserNode.getGroup(), node);
+        }
     }
 
-    @Override
     public boolean hasPermission(String groupName, String node) {
-        BasePermissionGroup group = getGroup(groupName);
+        PermissionGroup group = getGroup(groupName);
         if (Objects.isNull(group)) {
             return false;
         }

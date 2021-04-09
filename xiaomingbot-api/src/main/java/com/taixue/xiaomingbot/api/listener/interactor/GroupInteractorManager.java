@@ -33,4 +33,8 @@ public class GroupInteractorManager {
         }
         return null;
     }
+
+    public void unloadPlugin(XiaomingPlugin plugin) {
+        interactors.removeIf(interactor -> interactor.getPlugin() == plugin);
+    }
 }

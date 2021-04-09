@@ -122,7 +122,7 @@ public abstract class CommandExecutor extends XiaomingPluginObject {
                 }
                 result.put(variableName, inputWord);
             }
-            else if (!Pattern.quote(formatWord).matches(inputWord)) {
+            else if (!inputWord.matches(formatWord)) {
                 return null;
             }
 
@@ -131,7 +131,14 @@ public abstract class CommandExecutor extends XiaomingPluginObject {
         }
 
         if (formatIndex < formatArgs.size()) {
-            return null;
+            if (formatIndex == formatArgs.size() - 1 &&
+                    formatArgs.get(formatArgs.size() - 1).equals("{remain}")) {
+                result.put("remain", "");
+                return result;
+            }
+            else {
+                return null;
+            }
         }
 
         if (inputIndex < inputArgs.size()) {

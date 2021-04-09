@@ -50,21 +50,6 @@ public class XiaomingPlugin {
     }
 
     /**
-     * 交互器部分
-     */
-    public boolean isGroupInteractor(String input) {
-        return false;
-    }
-
-    public void onGroupMessage(GroupInteractorUserData userData, MsgSender msgSender) {}
-
-    public void onPrivateMessage(PrivateInteractorUserData userData, MsgSender msgSender) {}
-
-    public boolean isPrivateInteractor(String input) {
-        return false;
-    }
-
-    /**
      * 被别的插件主动脱钩时的操作
      */
     public void onUnhook(XiaomingPlugin plugin) {

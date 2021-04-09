@@ -29,13 +29,9 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         this.directory = directory;
     }
 
-    protected Map<String, PluginLoader> pluginFiles = new HashMap<>();
-
     protected Map<String, PluginLoader> failToLoadPlugins = new HashMap<>();
 
     protected Map<String, PluginLoader> loadedPlugins = new HashMap<>();
-
-    protected List<PluginLoader> pluginLoaderList = new ArrayList<>();
 
     public boolean isLoaded(String pluginName) {
         return loadedPlugins.containsKey(pluginName);
@@ -47,6 +43,14 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         PluginLoader pluginLoader = new PluginLoader(from, property);
         pluginLoader.setPlugin(plugin);
         loadedPlugins.put(plugin.getName(), pluginLoader);
+    }
+
+    public Map<String, XiaomingPlugin> getLoadedPlugins() {
+        Map<String, XiaomingPlugin> result = new HashMap<>();
+        for (PluginLoader value : loadedPlugins.values()) {
+            result.put(value.getPlugin().getName(), value.getPlugin());
+        }
+        return result;
     }
 
     /**
@@ -219,6 +223,37 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         return property;
     }
 
+    public boolean unloadPlugin(String pluginName) {
+        XiaomingPlugin plugin = getPlugin(pluginName);
+        if (Objects.nonNull(plugin)) {
+            unloadPlugin(plugin);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public boolean reloadPlugin(CommandSender sender, String pluginName) {
+        PluginLoader pluginLoader = loadedPlugins.get(pluginName);
+        if (Objects.isNull(pluginLoader)) {
+            return false;
+        }
+        if (unloadPlugin(pluginName)) {
+            return tryLoadPlugin(sender, pluginLoader);
+        }
+        else {
+            return false;
+        }
+    }
+
+    public void unloadPlugin(XiaomingPlugin plugin) {
+        loadedPlugins.remove(plugin.getName());
+        XiaomingBot.getInstance().getPrivateInteractorManager().unloadPlugin(plugin);
+        XiaomingBot.getInstance().getGroupInteractorManager().unloadPlugin(plugin);
+        XiaomingBot.getInstance().getCommandManager().unloadPlugin(plugin);
+    }
+
     /**
      * 获取一个插件的 plugin.json
      * @param jarFile
@@ -285,6 +320,6 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
     @Nullable
     @Override
     public XiaomingPlugin getPlugin(String pluginName) {
-        return null;
+        return loadedPlugins.get(pluginName).getPlugin();
     }
 }
