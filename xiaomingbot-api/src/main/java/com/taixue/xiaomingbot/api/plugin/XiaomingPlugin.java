@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +52,7 @@ public class XiaomingPlugin {
     /**
      * 交互器部分
      */
-    public boolean isGroupInterleaver(String input) {
+    public boolean isGroupInteractor(String input) {
         return false;
     }
 
@@ -59,14 +60,14 @@ public class XiaomingPlugin {
 
     public void onPrivateMessage(PrivateInteractorUserData userData, MsgSender msgSender) {}
 
-    public boolean isPrivateInterleaver(String input) {
+    public boolean isPrivateInteractor(String input) {
         return false;
     }
 
     /**
      * 被别的插件主动脱钩时的操作
      */
-    public void beenUnhook(XiaomingPlugin plugin) {
+    public void onUnhook(XiaomingPlugin plugin) {
         HookHolder hook = getSponsorHookHolder(plugin.getName());
         if (Objects.nonNull(hook)) {
             logger.info("被 {} 主动解钩", plugin.getName());
@@ -87,7 +88,7 @@ public class XiaomingPlugin {
         if (Objects.nonNull(hook)) {
             logger.info("主动和 {} 解钩", plugin.getName());
             hookRecipients.remove(plugin.getName());
-            hook.recipient.beenUnhook(this);
+            hook.recipient.onUnhook(this);
         }
     }
 
@@ -98,25 +99,29 @@ public class XiaomingPlugin {
         }
     }
 
-    public void onHook(XiaomingPlugin plugin) {}
+    public void onHook(XiaomingPlugin plugin, HookHolder holder) {
+        hookRecipients.put(plugin.name, holder);
+    }
 
     @Nullable
-    public HookHolder hook(XiaomingPlugin plugin) {
+    public <T extends HookHolder> T hook(XiaomingPlugin plugin, Class<T> holderClass)
+            throws Exception {
         if (!isHookingWith(plugin.getName())) {
-            HookHolder holder = new HookHolder(this, plugin);
+            Constructor<T> constructor = holderClass.getConstructor(XiaomingPlugin.class, XiaomingPlugin.class);
+            T holder = constructor.newInstance(this, plugin);
             plugin.hookSponsors.put(name, holder);
-            hookRecipients.put(plugin.name, holder);
-            plugin.onHook(this);
+            plugin.onHook(this, holder);
             return holder;
         }
         return null;
     }
 
     @Nullable
-    public HookHolder hook(String pluginName) {
+    public <T extends HookHolder> T hook(String pluginName, Class<T> holderClass)
+            throws Exception {
         XiaomingPlugin plugin = xiaomingBot.getPluginManager().getPlugin(pluginName);
         if (Objects.nonNull(plugin) && !isHookingWith(pluginName)) {
-            return hook(plugin);
+            return hook(plugin, holderClass);
         }
         else {
             return null;
