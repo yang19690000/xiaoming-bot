@@ -4,12 +4,12 @@ package com.taixue.xiaomingbot.api.plugin;
 import java.util.List;
 
 public class PluginProperty {
-    protected String name;
-    protected String version;
-    protected String author;
-    protected List<String> authors;
-    protected List<String> fronts;
-    protected String main;
+    private String name;
+    private String version;
+    private String author;
+    private List<String> authors;
+    private List<String> fronts;
+    private String main;
 
     public List<String> getFronts() {
         return fronts;

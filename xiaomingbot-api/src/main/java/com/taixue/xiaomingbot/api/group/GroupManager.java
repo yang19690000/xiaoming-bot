@@ -1,6 +1,7 @@
 package com.taixue.xiaomingbot.api.group;
 
 import com.alibaba.fastjson.JSON;
+import com.taixue.xiaomingbot.util.JSONFileData;
 import love.forte.simbot.api.message.events.GroupMsg;
 import love.forte.simbot.api.message.results.GroupMemberInfo;
 import love.forte.simbot.api.message.results.GroupMemberList;
@@ -11,27 +12,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.*;
 
-public class GroupManager {
-    protected transient File file;
-    protected Map<String, Group> groups;
-
-    public static GroupManager forFile(File file) {
-        GroupManager manager = null;
-        try {
-            try (FileInputStream fileInputStream = new FileInputStream(file)) {
-                manager = JSON.parseObject(fileInputStream, GroupManager.class);
-            }
-        }
-        catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        if (Objects.isNull(manager)) {
-            manager = new GroupManager();
-            manager.save();
-        }
-        manager.file = file;
-        return manager;
-    }
+public class GroupManager extends JSONFileData {
+    private transient File file;
+    private Map<String, Group> groups;
 
     public Map<String, Group> getGroups() {
         return groups;
@@ -54,20 +37,6 @@ public class GroupManager {
         return result;
     }
 
-    public void save() {
-        try {
-            if (!file.exists() || file.isDirectory()) {
-                file.createNewFile();
-            }
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                fileOutputStream.write(JSON.toJSONString(this).getBytes());
-            }
-        }
-        catch (Exception exception) {
-            exception.printStackTrace();
-        }
-    }
-
     public void addGroup(String name, Group group) {
         if (Objects.isNull(groups)) {
             groups = new HashMap<>();
@@ -83,6 +52,15 @@ public class GroupManager {
     public boolean isGroup(String name, long group) {
         for (Group g : getGroups(name)) {
             if (g.getCode() == group) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean containsGroup(long group) {
+        for (Map.Entry<String, Group> stringGroupEntry : groups.entrySet()) {
+            if (stringGroupEntry.getValue().getCode() == group) {
                 return true;
             }
         }

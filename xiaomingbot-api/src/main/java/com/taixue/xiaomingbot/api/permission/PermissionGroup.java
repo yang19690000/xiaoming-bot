@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PermissionGroup {
-    protected List<String> superGroups = new ArrayList<>();
-    protected String alias;
-    protected List<String> permissions = new ArrayList<>();
+    private List<String> superGroups = new ArrayList<>();
+    private String alias;
+    private List<String> permissions = new ArrayList<>();
 
     public void setAlias(String alias) {
         this.alias = alias;

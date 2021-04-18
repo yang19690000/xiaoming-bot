@@ -1,8 +1,8 @@
 package com.taixue.xiaomingbot.api.group;
 
 public class Group {
-    protected long code;
-    protected String alias;
+    private long code;
+    private String alias;
 
     public void setAlias(String alias) {
         this.alias = alias;

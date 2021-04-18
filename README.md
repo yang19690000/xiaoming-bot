@@ -25,7 +25,7 @@ public class XiaomingLexicons extends XiaomingPlugin {
   "version": "1.0",
   "authors": [ "Chuanwise" ],
   "fronts": [],
-  "main": "com.taixue.xiaominglexicons.XiaomingLexicons"
+  "main": "com.taixue.xiaominglexicons.LexiconsPlugin"
 }
 ```
 ##### name（插件名）
@@ -76,10 +76,10 @@ public class XiaomingLexicons extends XiaomingPlugin {
 ##### 直接访问插件
 通过 `getXiaomingBot().getPluginManager().getPlugin("插件名")` 便可获得一个被加载在小明的插件。其类型为 `XiaomingPlugin`，需手动转换为其主类类型。例如：
 ```java
-package wiki.chuanwise.myxiaomingplugin;
+package wikiBranch.chuanwise.myxiaomingplugin;
 
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
-import com.taixue.xiaominglexicons.XiaomingLexicons;
+import com.taixue.xiaominglexicons.LexiconsPlugin;
 
 /**
  * @author Chuanwise
@@ -99,7 +99,7 @@ package com.taixue.xiaominglexicons.hook;
 
 import com.taixue.xiaomingbot.api.plugin.HookHolder;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
-import com.taixue.xiaominglexicons.XiaomingLexicons;
+import com.taixue.xiaominglexicons.LexiconsPlugin;
 
 /**
  * 插件通信所用类
@@ -124,7 +124,7 @@ public class LexiconsHookHolder extends HookHolder {
 其他插件需要与你的类通信时，需要 `hook` 你的插件。例如：
 
 ```java
-package wiki.chuanwise.myxiaomingplugin;
+package wikiBranch.chuanwise.myxiaomingplugin;
 
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaominglexicons.hook.LexiconsHookHolder;

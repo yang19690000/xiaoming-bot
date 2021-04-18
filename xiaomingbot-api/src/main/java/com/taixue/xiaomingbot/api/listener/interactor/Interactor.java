@@ -1,31 +1,24 @@
 package com.taixue.xiaomingbot.api.listener.interactor;
 
-import com.taixue.xiaomingbot.api.listener.base.UserDataIsolatedChooser;
-import com.taixue.xiaomingbot.api.listener.userdata.DispatcherUserData;
-import com.taixue.xiaomingbot.api.listener.userdata.InteractorUserData;
-import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
-import com.taixue.xiaomingbot.util.ArgsUtil;
-import love.forte.simbot.api.sender.MsgSender;
+import com.taixue.xiaomingbot.api.exception.InteactorTimeoutException;
+import com.taixue.xiaomingbot.api.listener.base.PluginUserDataIsolated;
+import com.taixue.xiaomingbot.api.listener.userdata.DispatcherUser;
+import com.taixue.xiaomingbot.api.listener.userdata.InteractorUser;
+import com.taixue.xiaomingbot.api.listener.userdata.MessageWaiter;
+import com.taixue.xiaomingbot.util.DateUtil;
+import com.taixue.xiaomingbot.util.NoParameterMethod;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * 所有交互器的超类
  * @param <UserData>
  */
 public abstract class Interactor
-        <UserData extends InteractorUserData, DispatcherMessage extends DispatcherUserData>
-        extends UserDataIsolatedChooser<UserData> {
-
-    protected XiaomingPlugin plugin;
-
-    public XiaomingPlugin getPlugin() {
-        return plugin;
-    }
-
-    public void setPlugin(XiaomingPlugin plugin) {
-        this.plugin = plugin;
-    }
+        <UserData extends InteractorUser, DispatcherMessage extends DispatcherUser>
+        extends PluginUserDataIsolated<UserData> {
+    protected static final long NEXT_INPUT_TIMEOUT_TIME = DateUtil.MINUTE_MINS * 10;
 
     public void setFinished(long qq) {
         setFinished(userDataIsolator.getUserData(qq));
@@ -39,40 +32,75 @@ public abstract class Interactor
         return userDataIsolator.getUserData(qq).isShouldExit();
     }
 
-    public boolean parseCommand(UserData userData, MsgSender msgSender) {
-        long qq = userData.getQQ();
-        String message = userData.getMessage();
+    public abstract boolean interact(DispatcherMessage dispatcherMessage);
 
-        if (message.startsWith("!") || message.startsWith("！")) {
-            message = message.substring(1);
-            List<String> args = ArgsUtil.splitArgs(message);
-            if (args.isEmpty()) {
-                return false;
-            }
-            if (args.get(0).equals("调试")) {
-                if (args.size() != 3) {
-                    return false;
-                }
-                switch (args.get(1)) {
-                    case "迁移":
-                        userData.toState(args.get(2));
-                        msgSender.SENDER.sendPrivateMsg(qq, "已强制迁移状态：" +
-                                userData.getLastState() + " => " + userData.currentState());
-                        return true;
-                    case "状态":
-                        msgSender.SENDER.sendPrivateMsg(qq, "状态链：" +userData.getStatesChain());
-                        return true;
-                    default:
-                        return false;
-                }
-            }
+    public final boolean interact(UserData userData) throws Exception {
+        MessageWaiter messageWaiter = userData.getMessageWaiter();
+        if (Objects.isNull(messageWaiter)) {
+            return onMessage(userData);
         }
-        return false;
+        else {
+            onGetNextInput(userData);
+            userData.setMessageWaiter(null);
+            return true;
+        }
     }
 
-    public abstract void interact(DispatcherMessage dispatcherMessage, MsgSender msgSender);
+    public abstract void onThrowable(Throwable throwable, UserData userData);
 
-    public abstract void showThrowable(Throwable throwable, UserData userData, MsgSender msgSender);
+    public abstract boolean onMessage(UserData userData);
 
-    public void onDefault(UserData userData, MsgSender msgSender) {}
+    public NoParameterMethod getTimeoutMethod(UserData userData, long timeOutTime, String defaultValue) {
+        return () -> {
+            userData.sendMessage("你已经{}没有理小明了，我们下次见哦", DateUtil.toTimeString(timeOutTime));
+            setFinished(userData.getAccountInfo().getAccountCodeNumber());
+            throw new InteactorTimeoutException(this);
+        };
+    }
+
+    public String getNextInput(UserData userData, String defaultValue) {
+        return getNextInput(userData, NEXT_INPUT_TIMEOUT_TIME, defaultValue);
+    }
+
+    @Nullable
+    public String getNextInput(UserData userData, long timeOutTime) {
+        return getNextInput(userData, timeOutTime, null);
+    }
+
+    @Nullable
+    public String getNextInput(UserData userData) {
+        return getNextInput(userData, NEXT_INPUT_TIMEOUT_TIME);
+    }
+
+    public final String getNextInput(UserData userData, long timeOutTime, String defaultValue) {
+        return getNextInput(userData, timeOutTime, defaultValue, getTimeoutMethod(userData, timeOutTime, defaultValue));
+    }
+
+    /**
+     * 获得下一个输入
+     */
+    public final String getNextInput(UserData userData, long timeOutTime, String defaultValue, NoParameterMethod method) {
+        MessageWaiter messageWaiter = new MessageWaiter(System.currentTimeMillis() + timeOutTime, defaultValue);
+        userData.setMessageWaiter(messageWaiter);
+        try {
+            synchronized (messageWaiter) {
+                messageWaiter.wait(timeOutTime);
+            }
+        }
+        catch (InterruptedException e) {
+        }
+
+        String value = messageWaiter.getValue();
+        if (Objects.isNull(value)) {
+            method.execute();
+        }
+        return value;
+    }
+
+
+    /**
+     * 当获得了输入时
+     * @param userData
+     */
+    public abstract void onGetNextInput(UserData userData);
 }

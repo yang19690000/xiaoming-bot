@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class PermissionUserNode {
-    protected String group;
-    protected List<String> permissions;
+    private String group;
+    private List<String> permissions;
 
     public void setPermissions(List<String> permissions) {
         this.permissions = permissions;

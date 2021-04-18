@@ -12,6 +12,9 @@
         <module>xiaomingbot-api</module>
         <module>xiaomingbot-host</module>
         <module>xiaomingbot-lexicons</module>
+        <module>xiaoming-wiki</module>
+        <module>xiaoming-admin</module>
+        <module>xiaomingbot-repeatbaner</module>
     </modules>
 
     <dependencyManagement>

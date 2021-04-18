@@ -1,111 +1,194 @@
 package com.taixue.xiaomingbot.api.plugin;
 
+import cn.hutool.core.io.resource.ResourceUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.taixue.xiaomingbot.api.bot.XiaomingBot;
-import com.taixue.xiaomingbot.api.listener.userdata.GroupInteractorUserData;
-import com.taixue.xiaomingbot.api.listener.userdata.PrivateInteractorUserData;
-import love.forte.simbot.api.sender.MsgSender;
+import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUser;
+import com.taixue.xiaomingbot.api.listener.userdata.PrivateDispatcherUser;
+import com.taixue.xiaomingbot.util.FileDataFactory;
+import com.taixue.xiaomingbot.util.FileUtil;
+import com.taixue.xiaomingbot.util.JSONFileData;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.io.File;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class XiaomingPlugin {
-    protected XiaomingBot xiaomingBot;
-    protected String name;
-    protected String version;
-    protected Logger logger;
-    protected File dataFolder;
+    private static final String CONFIG_FILE_NAME = "config.json";
 
-    protected Map<String, HookHolder> hookRecipients = new HashMap<>();
-    protected Map<String, HookHolder> hookSponsors = new HashMap<>();
+    private XiaomingBot xiaomingBot;
+    private String name;
+    private String version;
+    private Logger logger;
+    private File dataFolder;
+    private ClassLoader classLoader;
 
-    public Map<String, HookHolder> getHookRecipients() {
-        return hookRecipients;
+    private Map<String, HookHolder> hookHolders = new HashMap<>();
+
+    public Map<String, HookHolder> getHookHolders() {
+        return hookHolders;
     }
 
-    public Map<String, HookHolder> getHookSponsors() {
-        return hookSponsors;
+    public File getConfigFile() {
+        return new File(getDataFolder(), CONFIG_FILE_NAME);
+    }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
+    /**
+     * 加载配置文件为某特定类型
+     */
+    @Nullable
+    public <T extends JSONFileData> T loadConfigAs(Class<T> configClass)
+            throws IOException, JSONException {
+        return JSONFileData.forFile(getConfigFile(), configClass);
+    }
+
+    public <T extends JSONFileData> T loadConfigAsOrNew(Class<T> configClass, FileDataFactory<T> factory) {
+        return JSONFileData.forFileOrNew(getConfigFile(), configClass, factory);
+    }
+
+    /**
+     * 以图形式加载配置文件
+     */
+    @Nullable
+    public Map<String, Object> loadConfigAsMap() throws IOException, JSONException {
+        File file = getConfigFile();
+        if (file.exists() && !file.isDirectory()) {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                return JSON.parseObject(fileInputStream, Map.class);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 将资源文件 config.json 复制到插件数据文件夹中
+     * @return
+     */
+    public boolean copyDefaultConfig() {
+        File file = getConfigFile();
+        if (!file.exists() || file.isDirectory()) {
+            try {
+                final InputStream inputStream = getClassLoader().getResourceAsStream(CONFIG_FILE_NAME);
+                if (Objects.nonNull(inputStream)) {
+                    FileUtil.copyResource(inputStream, file);
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return false;
     }
 
     @Nullable
-    public HookHolder getRecipentHookHolder(String recipientName) {
-        return hookRecipients.get(recipientName);
-    }
-
-    @Nullable
-    public HookHolder getSponsorHookHolder(String sponsorName) {
-        return hookSponsors.get(sponsorName);
-    }
-
-    public boolean isHookSponsor(String sponsorName) {
-        return Objects.nonNull(getSponsorHookHolder(sponsorName));
-    }
-
-    public boolean isHookRecipient(String recipientName) {
-        return Objects.nonNull(getRecipentHookHolder(recipientName));
+    public HookHolder getHookHolder(String otherPluginName) {
+        return hookHolders.get(otherPluginName);
     }
 
     /**
      * 被别的插件主动脱钩时的操作
      */
-    public void onUnhook(XiaomingPlugin plugin) {
-        HookHolder hook = getSponsorHookHolder(plugin.getName());
-        if (Objects.nonNull(hook)) {
-            logger.info("被 {} 主动解钩", plugin.getName());
-            hookSponsors.remove(plugin.getName());
-        }
-    }
+    public void onUnhook(XiaomingPlugin plugin, HookHolder holder) {}
 
     public boolean isHookingWith(String pluginName) {
-        return isHookRecipient(pluginName) || isHookSponsor(pluginName);
+        return hookHolders.containsKey(pluginName);
+    }
+
+    public boolean isHookingWith(XiaomingPlugin plugin) {
+        return isHookingWith(plugin.getName());
     }
 
     /**
      * 主动与其他插件脱钩时的操作
      * @param plugin
      */
-    public void unhook(XiaomingPlugin plugin) {
-        HookHolder hook = getRecipentHookHolder(plugin.getName());
-        if (Objects.nonNull(hook)) {
-            logger.info("主动和 {} 解钩", plugin.getName());
-            hookRecipients.remove(plugin.getName());
-            hook.recipient.onUnhook(this);
+    public final boolean unhook(XiaomingPlugin plugin) throws Exception {
+        HookHolder hookHolder = getHookHolder(plugin.getName());
+        if (Objects.nonNull(hookHolder)) {
+            unhook(hookHolder);
+            return true;
+        }
+        else {
+            return false;
         }
     }
 
-    public void unhook(String pluginName) {
-        HookHolder hook = getRecipentHookHolder(pluginName);
+    public final boolean unhook(HookHolder hookHolder) throws Exception {
+        XiaomingPlugin otherPlugin = hookHolder.getOtherPlugin(this);
+        logger.info("主动和{}解钩", otherPlugin.getCompleteName());
+        otherPlugin.onUnhook(this, hookHolder);
+        hookHolders.remove(hookHolder);
+        otherPlugin.hookHolders.remove(name);
+        return true;
+    }
+
+    public final boolean unhook(String pluginName) throws Exception {
+        HookHolder hook = getHookHolder(pluginName);
         if (Objects.nonNull(hook)) {
-            unhook(hook.getSponsor());
+            return unhook(hook.getSponsor());
+        }
+        else {
+            return false;
         }
     }
 
-    public void onHook(XiaomingPlugin plugin, HookHolder holder) {
-        hookRecipients.put(plugin.name, holder);
+    public final boolean unHookAll() throws Exception {
+        for (Map.Entry<String, HookHolder> entry : hookHolders.entrySet()) {
+            if (!unhook(entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
+    /**
+     * 被正在挂钩的插件解钩时的操作
+     * @param otherPlugin
+     * @param holder
+     */
+    public void onHook(XiaomingPlugin otherPlugin, HookHolder holder) {}
+
+    /**
+     * 主动和其他插件挂钩
+     */
     @Nullable
-    public <T extends HookHolder> T hook(XiaomingPlugin plugin, Class<T> holderClass)
+    public <T extends HookHolder> T hook(XiaomingPlugin otherPlugin, Class<T> holderClass)
             throws Exception {
-        if (!isHookingWith(plugin.getName())) {
+        if (!isHookingWith(otherPlugin.getName())) {
             Constructor<T> constructor = holderClass.getConstructor(XiaomingPlugin.class, XiaomingPlugin.class);
-            T holder = constructor.newInstance(this, plugin);
-            plugin.hookSponsors.put(name, holder);
-            plugin.onHook(this, holder);
-            return holder;
+            T hookHolder = constructor.newInstance(this, otherPlugin);
+            otherPlugin.hookHolders.put(otherPlugin.name, hookHolder);
+            otherPlugin.onHook(this, hookHolder);
+            return hookHolder;
         }
-        return null;
+        else {
+            return null;
+        }
     }
 
     @Nullable
     public <T extends HookHolder> T hook(String pluginName, Class<T> holderClass)
             throws Exception {
         XiaomingPlugin plugin = xiaomingBot.getPluginManager().getPlugin(pluginName);
-        if (Objects.nonNull(plugin) && !isHookingWith(pluginName)) {
+        if (Objects.nonNull(plugin)) {
             return hook(plugin, holderClass);
         }
         else {
@@ -122,7 +205,7 @@ public class XiaomingPlugin {
     }
 
     public String getCompleteName() {
-        return name + " " + version;
+        return name + " (" + version + ")";
     }
 
     public void setLogger(Logger logger) {
@@ -159,5 +242,13 @@ public class XiaomingPlugin {
 
     public File getDataFolder() {
         return dataFolder;
+    }
+
+    public boolean onGroupMessage(GroupDispatcherUser userData) {
+        return false;
+    }
+
+    public boolean onPrivateMessage(PrivateDispatcherUser userData) {
+        return false;
     }
 }

@@ -15,8 +15,6 @@ import java.util.Objects;
  * @author Chuanwise
  */
 public class PluginLoaderUtil {
-    public static final Logger LOGGER = LoggerFactory.getLogger("PluginLoader");
-
     /**
      * 设立某个 jarFile 的 URLClassLoader
      * @param jarFile

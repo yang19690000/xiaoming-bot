@@ -1,6 +1,6 @@
 package com.taixue.xiaomingbot.api.listener.interactor;
 
-import com.taixue.xiaomingbot.api.listener.userdata.PrivateDispatcherUserData;
+import com.taixue.xiaomingbot.api.listener.userdata.PrivateDispatcherUser;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PrivateInteractorManager {
-    protected final List<PrivateInteractor> interactors = new ArrayList<>();
+    private final List<PrivateInteractor> interactors = new ArrayList<>();
 
     public void register(PrivateInteractor interactor, XiaomingPlugin plugin) {
         if (!isRegistered(interactor)) {
@@ -22,13 +22,17 @@ public class PrivateInteractorManager {
     }
 
     @Nullable
-    public PrivateInteractor getInteractor(PrivateDispatcherUserData userData) {
+    public PrivateInteractor getInteractor(PrivateDispatcherUser userData) {
         for (PrivateInteractor interactor: interactors) {
-            if (interactor.isInteractor(userData)) {
+            if (interactor.interact(userData)) {
                 return interactor;
             }
         }
         return null;
+    }
+
+    public List<PrivateInteractor> getInteractors() {
+        return interactors;
     }
 
     public void unloadPlugin(XiaomingPlugin plugin) {

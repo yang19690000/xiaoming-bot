@@ -1,6 +1,7 @@
 package com.taixue.xiaomingbot.api.permission;
 
 import com.alibaba.fastjson.JSON;
+import com.taixue.xiaomingbot.util.JSONFileData;
 import com.taixue.xiaomingbot.util.PermissionUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,8 +14,9 @@ import java.util.*;
 /**
  * @author Chuanwise
  */
-public class PermissionSystem {
-    protected File file;
+public class PermissionSystem extends JSONFileData {
+    public static final String DEFAULT_PERMISSION_GROUP_NAME = "default";
+    private File file;
 
     public static PermissionSystem forFile(File file) {
         PermissionSystem result = null;
@@ -147,7 +149,7 @@ public class PermissionSystem {
     }
 
     public boolean hasPermission(PermissionGroup group, String node) {
-        for (String n: group.permissions) {
+        for (String n: group.getPermissions()) {
             if (n.equals("-" + node)) {
                 return false;
             }
@@ -155,7 +157,7 @@ public class PermissionSystem {
                 return true;
             }
         }
-        for (String superGroupName: group.superGroups) {
+        for (String superGroupName: group.getSuperGroups()) {
             PermissionGroup superGroup = getGroup(superGroupName);
             if (Objects.isNull(superGroup)) {
                 System.err.println("找不到权限组：" + superGroupName);
@@ -208,17 +210,6 @@ public class PermissionSystem {
         }
         else {
             return hasPermission(group, node);
-        }
-    }
-
-    public void save() {
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            String jsonString = JSON.toJSONString(this);
-            fileOutputStream.write(jsonString.getBytes());
-        }
-        catch (Exception exception) {
-            exception.printStackTrace();
         }
     }
 }

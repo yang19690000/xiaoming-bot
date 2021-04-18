@@ -14,7 +14,9 @@ public class DateUtil {
     public static final long DAY_MINS = HOUR_MINS * 24;
     public static final long MOUTH_MINS = DAY_MINS * 30;
 
-    public static String getTimeString(long time) {
+    public static String toTimeString(long time) {
+        long mouth = time / MOUTH_MINS;
+        time -= mouth * MOUTH_MINS;
         long days = time / DAY_MINS;
         time -= days * DAY_MINS;
         long hours = time / HOUR_MINS;
@@ -25,6 +27,9 @@ public class DateUtil {
         time -= seconds * SECOND_MINS;
 
         StringBuilder result = new StringBuilder();
+        if (mouth > 0) {
+            result.append(days + "月");
+        }
         if (days > 0) {
             result.append(days + "天");
         }
@@ -32,7 +37,7 @@ public class DateUtil {
             result.append(hours + "小时");
         }
         if (minutes > 0) {
-            result.append(minutes + "分");
+            result.append(minutes + "分钟");
         }
         if (result.length() == 0 && seconds > 0) {
             result.append(seconds + "秒");

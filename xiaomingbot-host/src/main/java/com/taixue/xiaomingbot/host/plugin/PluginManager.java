@@ -1,12 +1,12 @@
 package com.taixue.xiaomingbot.host.plugin;
 
 import com.alibaba.fastjson.JSON;
+import com.taixue.xiaomingbot.api.base.XiaomingObject;
 import com.taixue.xiaomingbot.api.plugin.PluginProperty;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaomingbot.api.command.CommandSender;
 import com.taixue.xiaomingbot.host.XiaomingBot;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -21,17 +21,16 @@ import java.util.zip.ZipEntry;
  * 首先加载没有前置插件的基本插件，然后加载已齐备所有前置插件的插件，不断执行直到两次加载结果相等。
  * 如果最终加载插件数和插件文件总数相等，所有插件均加载成功，否则有的插件加载失败。
  */
-public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManager {
-    public static final Logger LOGGER = LoggerFactory.getLogger("PluginLoader");
+public class PluginManager extends XiaomingObject implements com.taixue.xiaomingbot.api.plugin.PluginManager {
     public final File directory;
 
     public PluginManager(File directory) {
         this.directory = directory;
     }
 
-    protected Map<String, PluginLoader> failToLoadPlugins = new HashMap<>();
+    private Map<String, PluginLoader> failToLoadPlugins = new HashMap<>();
 
-    protected Map<String, PluginLoader> loadedPlugins = new HashMap<>();
+    private Map<String, PluginLoader> loadedPlugins = new HashMap<>();
 
     public boolean isLoaded(String pluginName) {
         return loadedPlugins.containsKey(pluginName);
@@ -91,6 +90,7 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         XiaomingPlugin plugin = null;
         try {
             plugin = PluginLoaderUtil.loadPluginInstance(pluginFile, property.getMain(), XiaomingPlugin.class);
+            plugin.setClassLoader(PluginLoaderUtil.urlClassLoader(pluginFile));
             plugin.setName(property.getName());
             plugin.setVersion(property.getVersion());
             plugin.setLogger(LoggerFactory.getLogger(property.getName()));
@@ -99,16 +99,8 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
 
             if (Objects.nonNull(plugin)) {
                 registerLoadedPlugin(pluginFile, property, plugin);
-                try {
-                    LOGGER.info("正在初始化插件：{}", property.getName());
-                    plugin.onEnable();
-                    LOGGER.info("插件 {} 初始化完成", property.getName());
-                    return true;
-                }
-                catch (Exception exception) {
-                    sender.sendError("初始化插件 {} 时出现异常：{}", property.getName(), exception);
-                    exception.printStackTrace();
-                }
+                enablePlugin(sender, plugin);
+                return true;
             }
             else {
                 sender.sendError("加载插件 {} 时意外遇到了未抛出异常的空指针");
@@ -117,8 +109,9 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         catch (ClassCastException classCastException) {
             sender.sendError("插件主类：{} 不是 {} 的子类", property.getMain(), XiaomingPlugin.class.getName());
         }
-        catch (Exception exception) {
-            sender.sendError("加载插件 {} 时出现异常：{}", property.getName(), exception);
+        catch (Throwable throwable) {
+            sender.sendError("加载插件 {} 时出现错误：{}", property.getName(), throwable);
+            throwable.printStackTrace();
         }
         registerFailToLoadedPlugin(pluginFile, property.getName(), property);
         return false;
@@ -211,26 +204,32 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         // 若无 name 属性，则将其设置为 jar 文件名
         if (Objects.isNull(property.getName())) {
             property.setName(pluginFile.getName().substring(0, pluginFile.getName().lastIndexOf('.')));
-            LOGGER.info("缺少插件名，已将其设置为 " + property.getName());
+            getLogger().info("缺少插件名，已将其设置为 " + property.getName());
         }
 
         // 若无 version 属性，则将其设置为 (unknown-version)
         if (Objects.isNull(property.getVersion())) {
             property.setVersion("(unknown-version)");
-            LOGGER.info("缺少插件版本，已将其设置为 " + property.getVersion());
+            getLogger().info("缺少插件版本，已将其设置为 " + property.getVersion());
         }
 
         return property;
     }
 
-    public boolean unloadPlugin(String pluginName) {
+    public boolean unloadPlugin(CommandSender sender, String pluginName) {
         XiaomingPlugin plugin = getPlugin(pluginName);
         if (Objects.nonNull(plugin)) {
-            unloadPlugin(plugin);
+            unloadPlugin(sender, plugin);
             return true;
         }
         else {
             return false;
+        }
+    }
+
+    public void reloadAll(CommandSender sender) {
+        for (PluginLoader value : loadedPlugins.values()) {
+            reloadPlugin(sender, value);
         }
     }
 
@@ -239,16 +238,48 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
         if (Objects.isNull(pluginLoader)) {
             return false;
         }
-        if (unloadPlugin(pluginName)) {
-            return tryLoadPlugin(sender, pluginLoader);
+        return reloadPlugin(sender, pluginLoader);
+    }
+
+    public boolean reloadPlugin(CommandSender sender, PluginLoader plugin) {
+        unloadPlugin(sender, plugin.getPlugin());
+        return tryLoadPlugin(sender, plugin);
+    }
+
+    public void disablePlugin(CommandSender sender, XiaomingPlugin plugin) {
+        try {
+            sender.sendMessage("正在卸载插件：{}", plugin.getName());
+            plugin.onDisable();
+            sender.sendMessage("插件 {} 卸载完成", plugin.getName());
         }
-        else {
-            return false;
+        catch (Exception exception) {
+            sender.sendError("卸载插件 {} 时出现异常：{}", plugin.getName(), exception);
+            exception.printStackTrace();
         }
     }
 
-    public void unloadPlugin(XiaomingPlugin plugin) {
+    public void enablePlugin(CommandSender sender, XiaomingPlugin plugin) {
+        try {
+            sender.sendMessage("正在初始化插件：{}", plugin.getName());
+            plugin.onEnable();
+            sender.sendMessage("插件 {} 初始化完成", plugin.getName());
+        }
+        catch (Exception exception) {
+            sender.sendError("初始化插件 {} 时出现异常：{}", plugin.getName(), exception);
+            exception.printStackTrace();
+        }
+    }
+
+    public void unloadPlugin(CommandSender sender, XiaomingPlugin plugin) {
+        disablePlugin(sender, plugin);
         loadedPlugins.remove(plugin.getName());
+        try {
+            plugin.unHookAll();
+        }
+        catch (Exception exception) {
+            sender.sendError("和插件脱钩时出现异常：{}，相关插件可能无法正常运行。", exception);
+            exception.printStackTrace();
+        }
         XiaomingBot.getInstance().getPrivateInteractorManager().unloadPlugin(plugin);
         XiaomingBot.getInstance().getGroupInteractorManager().unloadPlugin(plugin);
         XiaomingBot.getInstance().getCommandManager().unloadPlugin(plugin);
@@ -295,12 +326,12 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
                 }
             }
             else {
-                LOGGER.error("载入 {} 中的插件信息时意外遇到了空的 pluginProperty", pluginFile);
+                getLogger().error("载入 {} 中的插件信息时意外遇到了空的 pluginProperty", pluginFile);
                 return false;
             }
         }
         catch (IOException ioException) {
-            LOGGER.error("载入 {} 中的插件信息时出现异常：{}", pluginFile, ioException);
+            getLogger().error("载入 {} 中的插件信息时出现异常：{}", pluginFile, ioException);
             ioException.printStackTrace();
             return false;
         }
@@ -312,7 +343,7 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
                 pushUnloadLoader(pluginFile, loaders);
             }
             else if (!pluginFile.isDirectory()) {
-                LOGGER.error("插件文件夹：" + directory.getAbsolutePath() + " 中出现了非 jar 类型的文件：" + pluginFile.getName());
+                getLogger().error("插件文件夹：" + directory.getAbsolutePath() + " 中出现了非 jar 类型的文件：" + pluginFile.getName());
             }
         }
     }
@@ -321,5 +352,10 @@ public class PluginManager implements com.taixue.xiaomingbot.api.bot.PluginManag
     @Override
     public XiaomingPlugin getPlugin(String pluginName) {
         return loadedPlugins.get(pluginName).getPlugin();
+    }
+
+    @Override
+    public com.taixue.xiaomingbot.api.bot.XiaomingBot getXiaomingBot() {
+        return XiaomingBot.getInstance();
     }
 }

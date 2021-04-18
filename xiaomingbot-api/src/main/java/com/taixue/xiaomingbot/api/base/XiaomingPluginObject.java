@@ -3,7 +3,7 @@ package com.taixue.xiaomingbot.api.base;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 
 public abstract class XiaomingPluginObject extends XiaomingObject {
-    protected XiaomingPlugin plugin;
+    private XiaomingPlugin plugin;
 
     public XiaomingPlugin getPlugin() {
         return plugin;

@@ -1,14 +1,12 @@
 package com.taixue.xiaomingbot.host.command.executor;
 
 import com.taixue.xiaomingbot.api.command.*;
-import com.taixue.xiaomingbot.api.group.GroupManager;
 import com.taixue.xiaomingbot.api.permission.PermissionGroup;
 import com.taixue.xiaomingbot.api.permission.PermissionSystem;
 import com.taixue.xiaomingbot.api.permission.PermissionUserNode;
 import com.taixue.xiaomingbot.host.XiaomingBot;
-import com.taixue.xiaomingbot.host.command.sender.ConsoleCommandSender;
 import com.taixue.xiaomingbot.util.AtUtil;
-import love.forte.simbot.api.sender.MsgSender;
+import com.taixue.xiaomingbot.util.CommandWordUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 
 public class PermissionCommandExecutor extends CommandExecutor {
-    public static final String DEFAULT_PERMISSION_GROUP_NAME = "default";
-    public static final String PERMISSION_GROUP_REGEX = "(权限|权限组)";
-    public static final String NEW_REGEX = "(新增|新建|增加|增添|添加|新)";
-    public static final String REMOVE_REGEX = "(删除|删掉|卸载|删|取消|移除|去除|减少)";
-    public static final String ALIAS_REGEX = "(别名|昵称|绰号|备注)";
-    public static final String LOOK_REGEX = "(查看|罗列)";
-    public static final String CONFIRM_REGEX = "(确认)";
-    public static final String USER_REGEX = "(玩家|用户|好友)";
 
     public String getPermissionGroupName(String name) {
         PermissionGroup permissionGroup = XiaomingBot.getInstance().getPermissionSystem().getGroup(name);
@@ -34,22 +24,11 @@ public class PermissionCommandExecutor extends CommandExecutor {
             return permissionGroup.getAlias() + "（" + name + "）";
         }
     }
-
-    @Override
-    public boolean onCommand(CommandSender sender, String input) {
-        if (input.startsWith("#")) {
-            String trim = input.substring(1).trim();
-            if (!trim.isEmpty()) {
-                return super.onCommand(sender, trim);
-            }
-        }
-        return false;
-    }
-
+    
     /**
      * 新增权限组
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " " + NEW_REGEX + " {name}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " " + CommandWordUtil.NEW_REGEX + " {name}")
     @RequiredPermission("permission.group.new")
     public void onNewPermissionGroup(CommandSender sender,
                                      @CommandParameter("name") String name) {
@@ -61,18 +40,18 @@ public class PermissionCommandExecutor extends CommandExecutor {
         else {
             PermissionGroup permissionGroup = new PermissionGroup();
             List<String> superGroups = new ArrayList<>();
-            superGroups.add(DEFAULT_PERMISSION_GROUP_NAME);
+            superGroups.add(PermissionSystem.DEFAULT_PERMISSION_GROUP_NAME);
             permissionGroup.setSuperGroups(superGroups);
             permissionSystem.addGroup(name, permissionGroup);
             sender.sendMessage("已增加新的权限组：{}，小明已经将其继承自 {} 了",
-                    name, getPermissionGroupName(DEFAULT_PERMISSION_GROUP_NAME));
+                    name, getPermissionGroupName(PermissionSystem.DEFAULT_PERMISSION_GROUP_NAME));
         }
     }
 
     /**
      * 删除权限组
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " " + REMOVE_REGEX + " {name}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " " + CommandWordUtil.REMOVE_REGEX + " {name}")
     @RequiredPermission("permission.group.remove")
     public void onRemovePermissionGroup(CommandSender sender,
                                         @CommandParameter("name") String name) {
@@ -90,7 +69,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 设置权限组的别名
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " {name} " + ALIAS_REGEX + " {alias}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " {name} " + CommandWordUtil.ALIAS_REGEX + " {alias}")
     @RequiredPermission("permission.group.alias")
     public void onSetGroupAlias(CommandSender sender,
                                 @CommandParameter("name") String name,
@@ -116,7 +95,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 查看某一权限组的信息
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " " + LOOK_REGEX + " {name}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " " + CommandWordUtil.LOOK_REGEX + " {name}")
     @RequiredPermission("permission.group.look")
     public void onLookPermissionGroup(CommandSender sender,
                                       @CommandParameter("name") String name) {
@@ -154,7 +133,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 授权给用户
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " 授权 {who} {node}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " 授权 {who} {node}")
     @CommandFormat("授权 {who} {node}")
     @RequiredPermission("permission.user.addnode")
     public void onGiveUserPermission(CommandSender sender,
@@ -174,7 +153,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 增加组权限
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " {name} " + NEW_REGEX + " {node}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " {name} " + CommandWordUtil.NEW_REGEX + " {node}")
     @RequiredPermission("permission.group.addnode")
     public void onAddGroupPermission(CommandSender sender,
                                      @CommandParameter("name") String name,
@@ -199,8 +178,8 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 确认组权限
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " {name} " + CONFIRM_REGEX + " {node}")
-    @CommandFormat(PERMISSION_GROUP_REGEX + " {name} 确权 {node}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " {name} " + CommandWordUtil.CONFIRM_REGEX + " {node}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " {name} 确权 {node}")
     @RequiredPermission("permission.group.confirm")
     public void onConfirmGroupPermission(CommandSender sender,
                                          @CommandParameter("name") String name,
@@ -223,7 +202,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 查看权限组信息
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX)
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX)
     @RequiredPermission("permission.group.list")
     public void onListPermissionGroup(CommandSender sender) {
         Map<String, PermissionGroup> groups = XiaomingBot.getInstance().getPermissionSystem().getGroups();
@@ -237,8 +216,8 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 确认玩家权限
      */
-    @CommandFormat(USER_REGEX + " {who} " + CONFIRM_REGEX + " {node}")
-    @CommandFormat(USER_REGEX + " {who} 确权 {node}")
+    @CommandFormat(CommandWordUtil.USER_REGEX + " {who} " + CommandWordUtil.CONFIRM_REGEX + " {node}")
+    @CommandFormat(CommandWordUtil.USER_REGEX + " {who} 确权 {node}")
     @RequiredPermission("permission.user.confirm")
     public void onConfirmUserPermission(CommandSender sender,
                                         @CommandParameter("who") String who,
@@ -260,7 +239,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 删除玩家权限
      */
-    @CommandFormat(USER_REGEX + " {who} " + REMOVE_REGEX + " {node}")
+    @CommandFormat(CommandWordUtil.USER_REGEX + " {who} " + CommandWordUtil.REMOVE_REGEX + " {node}")
     @RequiredPermission("permission.user.remove")
     public void onRemoveUserPermission(CommandSender sender,
                                        @CommandParameter("who") String who,
@@ -281,7 +260,7 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 删除组权限
      */
-    @CommandFormat(PERMISSION_GROUP_REGEX + " {name} " + REMOVE_REGEX + " {node}")
+    @CommandFormat(CommandWordUtil.PERMISSION_GROUP_REGEX + " {name} " + CommandWordUtil.REMOVE_REGEX + " {node}")
     @RequiredPermission("permission.group.remove")
     public void onRemoveGroupPermission(CommandSender sender,
                                         @CommandParameter("name") String name,
@@ -323,8 +302,8 @@ public class PermissionCommandExecutor extends CommandExecutor {
     /**
      * 查看用户权限
      */
-    @CommandFormat(USER_REGEX + " {who} " + LOOK_REGEX)
-    @CommandFormat(USER_REGEX + " {who}")
+    @CommandFormat(CommandWordUtil.USER_REGEX + " {who} " + CommandWordUtil.LOOK_REGEX)
+    @CommandFormat(CommandWordUtil.USER_REGEX + " {who}")
     @RequiredPermission("permission.user.look")
     public void onLookUserPermission(CommandSender sender,
                                      @CommandParameter("who") String who) {

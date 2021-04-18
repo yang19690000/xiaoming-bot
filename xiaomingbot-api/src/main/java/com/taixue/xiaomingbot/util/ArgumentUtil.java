@@ -3,8 +3,8 @@ package com.taixue.xiaomingbot.util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArgsUtil {
-    private ArgsUtil() {}
+public class ArgumentUtil {
+    private ArgumentUtil() {}
 
     public static List<String> splitArgs(String line) {
         line = line.trim();
@@ -96,6 +96,20 @@ public class ArgsUtil {
         StringBuilder builder = new StringBuilder(args.get(begin));
         for (int index = begin + 1; index < args.size(); index ++) {
             builder.append(" ").append(args.get(index));
+        }
+        return builder.toString();
+    }
+
+    public static String replaceArguments(String format, Object[] arguments) {
+        StringBuilder builder = new StringBuilder(format);
+        for (Object argument: arguments) {
+            int pos = builder.indexOf("{}");
+            if (pos != -1) {
+                builder.replace(pos, pos + 2, argument.toString());
+            }
+            else {
+                break;
+            }
         }
         return builder.toString();
     }

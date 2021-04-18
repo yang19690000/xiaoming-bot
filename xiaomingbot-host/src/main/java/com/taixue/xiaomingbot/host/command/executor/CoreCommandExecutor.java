@@ -1,13 +1,18 @@
 package com.taixue.xiaomingbot.host.command.executor;
 
 import com.taixue.xiaomingbot.api.command.*;
+import com.taixue.xiaomingbot.api.group.Group;
+import com.taixue.xiaomingbot.api.group.GroupManager;
+import com.taixue.xiaomingbot.api.listener.interactor.GroupInteractor;
+import com.taixue.xiaomingbot.api.listener.interactor.PrivateInteractor;
 import com.taixue.xiaomingbot.api.plugin.HookHolder;
+import com.taixue.xiaomingbot.api.plugin.PluginConfig;
 import com.taixue.xiaomingbot.api.plugin.PluginProperty;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaomingbot.host.XiaomingBot;
-import com.taixue.xiaomingbot.host.command.sender.ConsoleCommandSender;
+import com.taixue.xiaomingbot.host.command.sender.GroupCommandSender;
 import com.taixue.xiaomingbot.host.plugin.PluginManager;
-import com.taixue.xiaomingbot.util.AtUtil;
+import com.taixue.xiaomingbot.util.CommandWordUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,21 +22,128 @@ import java.util.Map;
 import java.util.Objects;
 
 public class CoreCommandExecutor extends CommandExecutor {
-    public static final String RELOAD_WORD_REGEX = "(重载|重加载|重新加载)";
-    public static final String PLUGIN_WORD_REGEX = "插件";
+    public String getCommandExecutorsString() {
+        StringBuilder builder = new StringBuilder();
+        XiaomingBot instance = XiaomingBot.getInstance();
 
-    @Override
-    public boolean onCommand(CommandSender sender, String input) {
-        if (input.startsWith("!") || input.startsWith("！")) {
-            String trim = input.substring(1).trim();
-            if (!trim.isEmpty()) {
-                return super.onCommand(sender, trim);
+        List<CommandExecutor> commandExecutors = instance.getCommandManager().getCommandExecutors();
+        builder.append("指令处理器：");
+        if (commandExecutors.isEmpty()) {
+            builder.append("（无）");
+        }
+        else {
+            for (CommandExecutor commandExecutor : commandExecutors) {
+                String executorName;
+                if (Objects.isNull(commandExecutor.getPlugin())) {
+                    executorName = commandExecutor.getClass().getSimpleName() +
+                            "(内核注册)";
+                }
+                else {
+                    executorName = commandExecutor.getClass().getSimpleName() +
+                            "(" + commandExecutor.getPlugin().getCompleteName() + ")";
+                }
+                builder.append("\n").append(executorName);
             }
         }
-        return false;
+
+        return builder.toString();
     }
 
-    @CommandFormat(RELOAD_WORD_REGEX + " {what}")
+    public String getGroupInteractorString() {
+        StringBuilder builder = new StringBuilder();
+        XiaomingBot instance = XiaomingBot.getInstance();
+
+        List<GroupInteractor> groupInteractors = instance.getGroupInteractorManager().getInteractors();
+        builder.append("组消息交互器：");
+        if (groupInteractors.isEmpty()) {
+            builder.append("（无）");
+        }
+        else {
+            for (GroupInteractor interactor : groupInteractors) {
+                builder.append("\n")
+                        .append(interactor.getClass().getName())
+                        .append("(").append(interactor.getPlugin().getCompleteName()).append(")");
+            }
+        }
+
+        return builder.toString();
+    }
+
+    public String getPrivateInteractorString() {
+        StringBuilder builder = new StringBuilder();
+        XiaomingBot instance = XiaomingBot.getInstance();
+
+        List<PrivateInteractor> privateInteractors = instance.getPrivateInteractorManager().getInteractors();
+        builder.append("私聊消息交互器：");
+        if (privateInteractors.isEmpty()) {
+            builder.append("（无）");
+        }
+        else {
+            for (PrivateInteractor interactor : privateInteractors) {
+                builder.append("\n")
+                        .append(interactor.getClass().getName())
+                        .append("(").append(interactor.getPlugin().getCompleteName()).append(")");
+            }
+        }
+
+        return builder.toString();
+    }
+
+    public String getLoadedPluginString() {
+        StringBuilder builder = new StringBuilder();
+        XiaomingBot instance = XiaomingBot.getInstance();
+
+        Map<String, XiaomingPlugin> loadedPlugins = instance.getPluginManager().getLoadedPlugins();
+        builder.append("加载的插件：");
+        if (loadedPlugins.isEmpty()) {
+            builder.append("（无）");
+        }
+        else {
+            for (XiaomingPlugin value : loadedPlugins.values()) {
+                builder.append("\n").append(value.getCompleteName());
+            }
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public String getCommandPrefix() {
+        return "*";
+    }
+
+    @CommandFormat(CommandWordUtil.STATUS_REGEX + " " + CommandWordUtil.PLUGIN_REGEX)
+    @RequiredPermission("plugin.list")
+    public void onLoadedPluginsStatus(CommandSender sender) {
+        sender.sendMessage(getLoadedPluginString());
+    }
+
+    @CommandFormat(CommandWordUtil.STATUS_REGEX + " 指令处理器")
+    @RequiredPermission("plugin.list")
+    public void onCommandExecutorStatus(CommandSender sender) {
+        sender.sendMessage(getCommandExecutorsString());
+    }
+
+    @CommandFormat(CommandWordUtil.STATUS_REGEX + " 群聊交互器")
+    @RequiredPermission("plugin.list")
+    public void onGroupInteractorStatus(CommandSender sender) {
+        sender.sendMessage(getGroupInteractorString());
+    }
+
+    @CommandFormat(CommandWordUtil.STATUS_REGEX + " 私聊交互器")
+    @RequiredPermission("plugin.list")
+    public void onPrivateInteractorStatus(CommandSender sender) {
+        sender.sendMessage(getPrivateInteractorString());
+    }
+
+    @CommandFormat("调用")
+    @CommandFormat("call")
+    @CommandFormat("调用查询")
+    public void onCallCounter(CommandSender sender) {
+        sender.sendMessage("调用次数：{}", XiaomingBot.getInstance().getXiaomingConfig().getCallCouter());
+    }
+
+    @CommandFormat(CommandWordUtil.RELOAD_REGEX + " {what}")
     public void onReload(CommandSender sender,
                          @CommandParameter("what") String what) {
         switch (what) {
@@ -55,7 +167,32 @@ public class CoreCommandExecutor extends CommandExecutor {
         }
     }
 
-    @CommandFormat(PLUGIN_WORD_REGEX + " {operator} {remain}")
+    @CommandFormat(CommandWordUtil.GROUP_REGEX)
+    public void onListGroup(CommandSender sender) {
+        final GroupManager groupManager = XiaomingBot.getInstance().getGroupManager();
+        final Map<String, Group> groups = groupManager.getGroups();
+        if (Objects.isNull(groups) || groups.isEmpty()) {
+            sender.sendMessage("小明没有载入任何 QQ 群组哦");
+            return;
+        }
+        else {
+            StringBuilder builder = new StringBuilder("小明载入了{}个QQ群：");
+            for (Map.Entry<String, Group> entry : groups.entrySet()) {
+                builder.append("\n");
+                final Group value = entry.getValue();
+                if (Objects.isNull(value.getAlias())) {
+                    builder.append(entry.getKey()).append("：").append(value.getCode());
+                }
+                else {
+                    builder.append(value.getAlias()).append("<").append(entry.getKey()).append(">").append("：").append(value.getCode());
+                }
+            }
+            sender.sendMessage(builder.toString());
+        }
+    }
+
+    @CommandFormat(CommandWordUtil.PLUGIN_REGEX + " {operator} {remain}")
+    @CommandFormat(CommandWordUtil.PLUGIN_REGEX)
     public void onPlugin(CommandSender sender,
                          @CommandParameter("operator") String operator,
                          @CommandParameter("remain") String pluginName) {
@@ -86,47 +223,42 @@ public class CoreCommandExecutor extends CommandExecutor {
                 break;
             case "加载":
                 if (verifyPermissionAndReport(sender, "plugin.load")) {
-                    try {
-                        File file = new File(pluginManager.directory, pluginName);
-                        if (!file.exists() || file.isDirectory()) {
-                            sender.sendError("应该给我的是插件文件名而不是插件名哦");
-                            return;
-                        }
-                        PluginProperty property = pluginManager.pluginProperty(file);
-                        if (Objects.isNull(property)) {
-                            sender.sendError("看不懂 {} 这个插件文件");
-                            return;
-                        }
-                        else {
-                            if (pluginManager.isLoaded(property.getName())) {
-                                sender.sendMessage("{} 这个插件好像已经加载了，如果需要重载，告诉我「插件 重载 {}」哦",
-                                        property.getName(), property.getName());
+                    if (pluginName.isEmpty()) {
+                        pluginManager.reloadAll(sender);
+                    }
+                    else {
+                        try {
+                            File file = new File(pluginManager.directory, pluginName);
+                            if (!file.exists() || file.isDirectory()) {
+                                sender.sendError("应该给我的是插件文件名而不是插件名哦");
+                                return;
+                            }
+                            PluginProperty property = pluginManager.pluginProperty(file);
+                            if (Objects.isNull(property)) {
+                                sender.sendError("看不懂 {} 这个插件文件");
+                                return;
                             }
                             else {
-                                if (pluginManager.tryLoadPlugin(sender, new com.taixue.xiaomingbot.api.bot.PluginManager.PluginLoader(file, property))) {
-                                    sender.sendMessage("插件 {} 加载成功 ヽ(✿ﾟ▽ﾟ)ノ", property.getName());
+                                if (pluginManager.isLoaded(property.getName())) {
+                                    sender.sendMessage("{} 这个插件好像已经加载了，如果需要重载，告诉我「插件 重载 {}」哦",
+                                            property.getName(), property.getName());
                                 }
                                 else {
-                                    sender.sendMessage("插件 {} 加载失败 (；′⌒`)", property.getName());
+                                    pluginManager.tryLoadPlugin(sender, new com.taixue.xiaomingbot.api.plugin.PluginManager.PluginLoader(file, property));
                                 }
                             }
                         }
-                    }
-                    catch (IOException e) {
-                        sender.sendError("小明好像无法正确读取 {} 这个文件", pluginName);
-                        e.printStackTrace();
+                        catch (IOException e) {
+                            sender.sendError("小明好像无法正确读取 {} 这个文件", pluginName);
+                            e.printStackTrace();
+                        }
                     }
                 }
                 break;
             case "重载":
                 if (verifyPermissionAndReport(sender, "plugin.reload")) {
                     if (pluginManager.isLoaded(pluginName)) {
-                        if (pluginManager.reloadPlugin(sender, pluginName)) {
-                            sender.sendMessage("插件 {} 重载成功 (๑•̀ㅂ•́)و✧", pluginName);
-                        }
-                        else {
-                            sender.sendMessage("插件 {} 重载失败 (ﾟДﾟ*)ﾉ", pluginName);
-                        }
+                        pluginManager.reloadPlugin(sender, pluginName);
                     }
                     else {
                         sender.sendMessage("{} 这个插件还没有加载", pluginName);
@@ -136,12 +268,7 @@ public class CoreCommandExecutor extends CommandExecutor {
             case "卸载":
                 if (verifyPermissionAndReport(sender, "plugin.unload")) {
                     if (pluginManager.isLoaded(pluginName)) {
-                        if (pluginManager.unloadPlugin(pluginName)) {
-                            sender.sendMessage("插件 {} 卸载成功 o((>ω< ))o", pluginName);
-                        }
-                        else {
-                            sender.sendMessage("插件 {} 卸载失败 （；´д｀）ゞ", pluginName);
-                        }
+                        pluginManager.unloadPlugin(sender, pluginName);
                     }
                     else {
                         sender.sendMessage("{} 这个插件还没有加载", pluginName);
@@ -181,29 +308,66 @@ public class CoreCommandExecutor extends CommandExecutor {
         }
     }
 
+    @CommandFormat("(禁用|关闭|屏蔽) {plugin} {remain}")
+    @RequiredPermission("plugin.unload")
+    public void onUnable(CommandSender sender,
+                         @CommandParameter("plugin") String plugin,
+                         @CommandParameter("remain") String group) {
+        if (group.isEmpty() && sender instanceof GroupCommandSender) {
+            group = ((GroupCommandSender) sender).getGroupCode() + "";
+        }
+        if (group.matches("\\d+")) {
+            long groupCode = Long.parseLong(group);
+            PluginConfig pluginConfig = XiaomingBot.getInstance().getPluginConfig();
+            if (pluginConfig.unableInGroup(plugin, groupCode)) {
+                sender.sendMessage("群 {} 中并不能使用小明插件 {}", group, plugin);
+            }
+            else {
+                pluginConfig.toUnableInGroup(plugin, groupCode);
+                sender.sendMessage("已在群 {} 中禁用小明插件 {}", group, plugin);
+            }
+        }
+        else {
+            sender.sendError("{} 好像不是一个群号哦", group);
+            return;
+        }
+    }
+
+    @CommandFormat("(启用|启动|开启) {plugin} {remain}")
+    @RequiredPermission("plugin.unload")
+    public void onEnable(CommandSender sender,
+                         @CommandParameter("plugin") String plugin,
+                         @CommandParameter("remain") String group) {
+        if (group.isEmpty() && sender instanceof GroupCommandSender) {
+            group = ((GroupCommandSender) sender).getGroupCode() + "";
+        }
+        if (group.matches("\\d+")) {
+            long groupCode = Long.parseLong(group);
+            PluginConfig pluginConfig = XiaomingBot.getInstance().getPluginConfig();
+            if (pluginConfig.unableInGroup(plugin, groupCode)) {
+                pluginConfig.enableInGroup(plugin, groupCode);
+                sender.sendMessage("已启动群 {} 中的小明插件 {}", group, plugin);
+            }
+            else {
+                sender.sendMessage("群 {} 中并没有禁用小明插件 {} 哦", group, plugin);
+            }
+        }
+        else {
+            sender.sendError("{} 好像不是一个群号哦", group);
+            return;
+        }
+    }
+
     public void showPluginMessage(CommandSender sender, XiaomingPlugin plugin) {
         StringBuilder builder = new StringBuilder("【" + plugin.getName() + "】");
         builder.append("\n").append("版本：").append(plugin.getVersion());
-        if (!plugin.getHookRecipients().isEmpty()) {
-            builder.append("与这 " + plugin.getHookRecipients().size() + " 个插件挂钩：");
-            for (HookHolder value : plugin.getHookRecipients().values()) {
+        Map<String, HookHolder> hookHolders = plugin.getHookHolders();
+        if (!hookHolders.isEmpty()) {
+            builder.append("与 " + hookHolders.size() + " 个插件挂钩：");
+            for (HookHolder value : hookHolders.values()) {
                 builder.append("\n").append(value.getSponsor().getName());
             }
         }
         sender.sendMessage(builder.toString());
-    }
-
-    @CommandFormat("授权 {who} {node}")
-    @RequiredPermission("permission.user.addnode")
-    public void onGiveUserPermission(CommandSender sender,
-                                     @CommandParameter("who") String who,
-                                     @CommandParameter("node") String node) {
-        long qq = AtUtil.parseQQ(who);
-        if (qq == -1) {
-            sender.sendMessage("小明找不到 {} ╰（‵□′）╯", who);
-            return;
-        }
-        XiaomingBot.getInstance().getPermissionSystem().giveUserPermission(qq, node);
-        sender.sendMessage("成功授予 {} 权限节点：{} (๑•̀ㅂ•́)و✧", who, node);
     }
 }

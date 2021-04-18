@@ -23,3 +23,10 @@
 hs_err_pid*
 
 simbot.yml
+messages
+cache\
+configs\
+emojis\
+pictures\
+plugins\
+target\

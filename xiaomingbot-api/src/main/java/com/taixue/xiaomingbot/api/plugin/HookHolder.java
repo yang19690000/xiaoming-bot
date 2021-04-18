@@ -4,8 +4,8 @@ package com.taixue.xiaomingbot.api.plugin;
  * @author Chuanwise
  */
 public class HookHolder {
-    protected final XiaomingPlugin sponsor;
-    protected final XiaomingPlugin recipient;
+    private final XiaomingPlugin sponsor;
+    private final XiaomingPlugin recipient;
 
     public HookHolder(XiaomingPlugin sponsor, XiaomingPlugin recipient) {
         this.sponsor = sponsor;
@@ -18,5 +18,17 @@ public class HookHolder {
 
     public XiaomingPlugin getRecipient() {
         return recipient;
+    }
+
+    public XiaomingPlugin getOtherPlugin(XiaomingPlugin plugin) {
+        if (plugin == sponsor) {
+            return recipient;
+        }
+        else if (plugin == recipient) {
+            return sponsor;
+        }
+        else {
+            throw new IllegalArgumentException("plugin " + plugin + " doesn't related this hook holder");
+        }
     }
 }

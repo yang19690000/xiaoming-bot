@@ -1,4 +1,4 @@
-package com.taixue.xiaomingbot.api.bot;
+package com.taixue.xiaomingbot.api.plugin;
 
 import com.alibaba.fastjson.JSON;
 import com.taixue.xiaomingbot.api.command.CommandSender;
@@ -26,9 +26,9 @@ public interface PluginManager {
      * 表示一个插件的数据结构
      */
     class PluginLoader {
-        protected final File file;
-        protected final PluginProperty property;
-        protected XiaomingPlugin plugin;
+        private final File file;
+        private final PluginProperty property;
+        private XiaomingPlugin plugin;
 
         public PluginLoader(File file, PluginProperty property) {
             this.file = file;

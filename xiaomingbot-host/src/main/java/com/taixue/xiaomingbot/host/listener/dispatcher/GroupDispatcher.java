@@ -2,24 +2,24 @@ package com.taixue.xiaomingbot.host.listener.dispatcher;
 
 import catcode.CatCodeUtil;
 import com.taixue.xiaomingbot.api.listener.interactor.GroupInteractor;
-import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUserData;
+import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUser;
+import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
+import com.taixue.xiaomingbot.host.XiaomingBot;
+import com.taixue.xiaomingbot.util.DateUtil;
 import love.forte.simbot.api.message.events.GroupMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * 组内信息调度器
  * @param <UserData>
  */
-public abstract class GroupDispatcher<UserData extends GroupDispatcherUserData>
+public abstract class GroupDispatcher<UserData extends GroupDispatcherUser>
         extends Dispatcher<UserData> {
-    public void atTell(long group, long qq, String message, MsgSender msgSender) {
-        msgSender.SENDER.sendGroupMsg(group, at(qq) + message);
-    }
-
-    public void atTell(UserData userData, String message, MsgSender msgSender) {
-        atTell(userData.getGroup(), userData.getQQ(), message, msgSender);
+    public String at(UserData userData) {
+        return userData.at();
     }
 
     public String at(long qq) {
@@ -29,46 +29,64 @@ public abstract class GroupDispatcher<UserData extends GroupDispatcherUserData>
     public abstract GroupInteractor getInteractor(UserData userData);
 
     @Override
-    public void showThrowable(Throwable throwable, UserData userData, MsgSender sender) {
-        super.showThrowable(throwable, userData, sender);
-        atTell(userData, "呜呜呜我遇到了一些问题，错误报告已经提交了", sender);
+    public void onThrowable(Throwable throwable, UserData userData) {
+        throwable.printStackTrace();
+
+        StringBuilder builder = new StringBuilder("【出现异常】");
+        builder.append("\n").append("触发人：" + userData.getQQ());
+        builder.append("\n").append("时间：" + DateUtil.format.format(System.currentTimeMillis()));
+        builder.append("\n").append("异常信息：").append(throwable);
+
+        String result = builder.toString();
+        System.err.println(result);
+        userData.atSendGroupMessage("呜呜呜我遇到了一些问题，错误报告已经提交了");
     }
 
-    public void dispatch(GroupMsg groupMsg, MsgSender msgSender) {
+    public void onGroupMessage(GroupMsg groupMsg, MsgSender msgSender) {
         long qq = groupMsg.getAccountInfo().getAccountCodeNumber();
         UserData userData = userDataIsolator.getUserData(qq);
-        userData.setMessage(groupMsg.getMsg());
-        userData.setGroup(groupMsg.getGroupInfo().getGroupCodeNumber());
+        userData.setGroupMsg(groupMsg);
+        userData.setMsgSender(msgSender);
         try {
-            dispatch(userData, msgSender);
+            dispatch(userData);
         }
         catch (Throwable throwable) {
-            showThrowable(throwable, userData, msgSender);
+            onThrowable(throwable, userData);
         }
     }
 
-    public void dispatch(UserData userData, MsgSender msgSender) throws Exception {
+    @Override
+    public void dispatch(UserData userData) throws Exception {
         GroupInteractor processor = userData.getInteractor();
         long group = userData.getGroup();
         long qq = userData.getQQ();
-        String at = CatCodeUtil.getInstance().getStringTemplate().at(qq);
-        String message = userData.getMessage();
 
-        if (parseCommand(userData, msgSender)) {
+        if (parseCommand(userData)) {
+            XiaomingBot.getInstance().getXiaomingConfig().increaseCallCounter();
             return;
+        }
+
+        // 给各插件交互
+        Map<String, XiaomingPlugin> loadedPlugins = XiaomingBot.getInstance().getPluginManager().getLoadedPlugins();
+        for (XiaomingPlugin value : loadedPlugins.values()) {
+            if (!XiaomingBot.getInstance().getPluginConfig().unableInGroup(value.getName(), group) &&
+                    value.onGroupMessage(userData)) {
+                XiaomingBot.getInstance().getXiaomingConfig().increaseCallCounter();
+                return;
+            }
         }
 
         if (Objects.isNull(processor) || processor.isFinished(qq)) {
             GroupInteractor newInteractor = getInteractor(userData);
             if (Objects.nonNull(newInteractor)) {
                 if (Objects.nonNull(processor) && processor.isFinished(qq)) {
-                    userData.getInteractor().exit(qq, group, msgSender);
+                    userData.getInteractor().onUserOut(qq);
                 }
                 userData.setInteractor(newInteractor);
-                newInteractor.init(qq, group, msgSender);
+                newInteractor.onUserIn(userData);
             }
             else {
-                onNullProcessor(userData, msgSender);
+                onNullProcessor(userData);
             }
         }
         else {
@@ -78,7 +96,7 @@ public abstract class GroupDispatcher<UserData extends GroupDispatcherUserData>
 //                msgSender.SENDER.sendGroupMsg(group, at +"已退出当前模式");
 //            }
 //            else {
-                processor.interact(userData, msgSender);
+                processor.interact(userData);
 //            }
         }
     }
