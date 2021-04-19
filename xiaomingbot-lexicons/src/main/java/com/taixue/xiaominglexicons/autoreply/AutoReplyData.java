@@ -10,12 +10,12 @@ import java.io.IOException;
 import java.util.*;
 
 public class AutoReplyData {
-    protected transient File file;
+    private transient File file;
 
-    protected Map<String, Map<String, AutoReplyItem>> users;
-    protected Map<String, AutoReplyItem> global;
-    protected Map<String, Map<String, AutoReplyItem>> groups;
-    protected List<String> illegalKeyRegex, illegalValueRegex;
+    private Map<String, Map<String, AutoReplyItem>> users;
+    private Map<String, AutoReplyItem> global;
+    private Map<String, Map<String, AutoReplyItem>> groups;
+    private List<String> illegalKeyRegex, illegalValueRegex;
 
     public static AutoReplyData forFile(File file) throws IOException {
         AutoReplyData data = null;
@@ -23,6 +23,9 @@ public class AutoReplyData {
             try (FileInputStream fileInputStream = new FileInputStream(file)) {
                 data = JSON.parseObject(fileInputStream, AutoReplyData.class);
             }
+        }
+        if (Objects.nonNull(data)) {
+            data.file = file;
         }
         return data;
     }
@@ -40,22 +43,22 @@ public class AutoReplyData {
             data.users = new HashMap<>();
             data.global = new HashMap<>();
             data.groups = new HashMap<>();
-            try {
-                data.save();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+            data.save();
         }
         return data;
     }
 
-    public void save() throws IOException {
-        if (!file.exists() || file.isDirectory()) {
-            file.createNewFile();
+    public void save() {
+        try {
+            if (!file.exists() || file.isDirectory()) {
+                file.createNewFile();
+            }
+            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+                fileOutputStream.write(JSON.toJSONString(this).getBytes());
+            }
         }
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-            fileOutputStream.write(JSON.toJSONString(this).getBytes());
+        catch (IOException exception) {
+            exception.printStackTrace();
         }
     }
 
@@ -129,8 +132,9 @@ public class AutoReplyData {
             global.put(key, new AutoReplyItem(answer));
         }
         else {
-            global.get(key).answers.add(answer);
+            global.get(key).getAnswers().add(answer);
         }
+        save();
     }
 
     public void addUsers(String who, String key, String answer) {
@@ -145,8 +149,9 @@ public class AutoReplyData {
             userMap.put(key, new AutoReplyItem(answer));
         }
         else {
-            userMap.get(key).answers.add(answer);
+            userMap.get(key).getAnswers().add(answer);
         }
+        save();
     }
 
     @Nullable
@@ -155,7 +160,7 @@ public class AutoReplyData {
             Map<String, AutoReplyItem> autoReplyItemMap = users.get(who);
             for (String string: autoReplyItemMap.keySet()) {
                 AutoReplyItem item = autoReplyItemMap.get(string);
-                if (string.equals(key) || (Objects.nonNull(item.alias) && item.alias.contains(key))) {
+                if (string.equals(key) || (Objects.nonNull(item.getAlias()) && item.getAlias().contains(key))) {
                     return item;
                 }
             }
@@ -169,7 +174,7 @@ public class AutoReplyData {
         if (Objects.nonNull(global)) {
             for (String string: global.keySet()) {
                 AutoReplyItem item = global.get(string);
-                if (string.equals(key) || (Objects.nonNull(item.alias) && item.alias.contains(key))) {
+                if (string.equals(key) || (Objects.nonNull(item.getAlias()) && item.getAlias().contains(key))) {
                     return item;
                 }
             }
@@ -193,6 +198,18 @@ public class AutoReplyData {
         if (Objects.nonNull(global)) {
             global.remove(key);
         }
+        save();
+    }
+
+    public void removeGlobal(String key, int index) {
+        AutoReplyItem globalValue = getGlobalValue(key);
+        if (Objects.nonNull(globalValue)) {
+            globalValue.getAnswers().remove(index);
+            if (globalValue.getAnswers().isEmpty()) {
+                global.remove(key);
+            }
+            save();
+        }
     }
 
     public void removeUserKey(String who, String key) {
@@ -202,6 +219,21 @@ public class AutoReplyData {
             if (userMap.isEmpty()) {
                 users.remove(userMap);
             }
+            save();
+        }
+    }
+
+    public void removeUserKey(String who, String key, int index) {
+        if (Objects.nonNull(users) && users.containsKey(who)) {
+            Map<String, AutoReplyItem> userMap = users.get(who);
+            AutoReplyItem autoReplyItem = userMap.get(key);
+            if (index > 0 && index < autoReplyItem.getAnswers().size()) {
+                autoReplyItem.getAnswers().remove(index);
+            }
+            if (userMap.isEmpty()) {
+                removeUserKey(who, key);
+            }
+            save();
         }
     }
 }

@@ -33,7 +33,11 @@ public interface GroupUserData {
     }
 
     default String at() {
-        return CatCodeUtil.getInstance().getStringTemplate().at(getQQ());
+        return at(getQQ());
+    }
+
+    default String at(long qq) {
+        return CatCodeUtil.getInstance().getStringTemplate().at(qq);
     }
 
     void sendGroupMessage(String message, Object... arguments);
@@ -42,5 +46,9 @@ public interface GroupUserData {
 
     default void atSendGroupMessage(String message, Object... arguments) {
         sendGroupMessage(at() + message, arguments);
+    }
+
+    default void atSendGroupMessage(long qq, String message, Object... arguments) {
+        sendGroupMessage(at(qq) + message, arguments);
     }
 }

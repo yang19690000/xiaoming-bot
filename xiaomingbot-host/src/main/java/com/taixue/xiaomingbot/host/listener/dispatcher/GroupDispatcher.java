@@ -6,6 +6,7 @@ import com.taixue.xiaomingbot.api.listener.userdata.GroupDispatcherUser;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaomingbot.host.XiaomingBot;
 import com.taixue.xiaomingbot.util.DateUtil;
+import kotlinx.coroutines.TimeoutCancellationException;
 import love.forte.simbot.api.message.events.GroupMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
@@ -49,6 +50,8 @@ public abstract class GroupDispatcher<UserData extends GroupDispatcherUser>
         userData.setMsgSender(msgSender);
         try {
             dispatch(userData);
+        }
+        catch (TimeoutCancellationException e) {
         }
         catch (Throwable throwable) {
             onThrowable(throwable, userData);

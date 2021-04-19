@@ -15,6 +15,7 @@
         <module>xiaoming-wiki</module>
         <module>xiaoming-admin</module>
         <module>xiaomingbot-repeatbaner</module>
+        <module>plugin-example</module>
     </modules>
 
     <dependencyManagement>

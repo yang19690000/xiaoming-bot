@@ -4,6 +4,7 @@ import com.taixue.xiaomingbot.api.listener.interactor.PrivateInteractor;
 import com.taixue.xiaomingbot.api.listener.userdata.PrivateDispatcherUser;
 import com.taixue.xiaomingbot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaomingbot.host.XiaomingBot;
+import kotlinx.coroutines.TimeoutCancellationException;
 import love.forte.simbot.api.message.events.PrivateMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
@@ -80,6 +81,8 @@ public abstract class PrivateDispatcher<UserData extends PrivateDispatcherUser>
         userData.setMsgSender(msgSender);
         try {
             dispatch(userData);
+        }
+        catch (TimeoutCancellationException e) {
         }
         catch (Throwable throwable) {
             onThrowable(throwable, userData);
