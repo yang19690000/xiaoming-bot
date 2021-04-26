@@ -2,6 +2,7 @@ package com.taixue.xiaoming.bot.host;
 
 import com.taixue.xiaoming.bot.api.base.HostObject;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
+import com.taixue.xiaoming.bot.api.config.Config;
 import com.taixue.xiaoming.bot.api.exception.MultipleHostException;
 import com.taixue.xiaoming.bot.api.group.Group;
 import com.taixue.xiaoming.bot.api.bot.XiaomingBot;
@@ -12,6 +13,7 @@ import com.taixue.xiaoming.bot.util.PathUtil;
 import love.forte.common.configuration.Configuration;
 import love.forte.simbot.annotation.SimbotApplication;
 import love.forte.simbot.api.sender.BotSender;
+import love.forte.simbot.bot.BotRegisterInfo;
 import love.forte.simbot.core.SimbotApp;
 import love.forte.simbot.core.SimbotContext;
 import love.forte.simbot.core.SimbotProcess;
@@ -51,6 +53,19 @@ public class XiaomingHost extends HostObject implements SimbotProcess {
 
     @Override
     public void post(@NotNull SimbotContext context) {
+        final Config config = getXiaomingBot().getConfig();
+        if (!config.getFile().exists()) {
+            config.save();
+        }
+        for (Config.BotAccount account : config.getAccounts()) {
+            try {
+                context.getBotManager().registerBot(new BotRegisterInfo(String.valueOf(account.getQq()), account.getPassword()));
+            } catch (Exception exception) {
+                getLogger().error("登录账号：{} 时出现异常：{}", account.getQq(), exception);
+                exception.printStackTrace();
+            }
+        }
+
         final XiaomingBot xiaomingBot = getXiaomingBot();
         final BotSender sender = context.getBotManager().getDefaultBot().getSender();
 
@@ -72,11 +87,11 @@ public class XiaomingHost extends HostObject implements SimbotProcess {
         for (Group log : xiaomingBot.getGroupManager().forTag("log")) {
             sender.SENDER.sendGroupMsg(log.getCode(), "小明正常启动" + getXiaomingBot().getEmojiManager().get("happy"));
         }
+        getLogger().info("小明正常启动" + getXiaomingBot().getEmojiManager().get("happy"));
     }
 
     @Override
     public void pre(@NotNull Configuration config) {
-
     }
 
     public static void main(String[] args) {

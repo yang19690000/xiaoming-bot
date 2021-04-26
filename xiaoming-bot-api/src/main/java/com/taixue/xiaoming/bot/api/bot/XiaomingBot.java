@@ -38,7 +38,12 @@ public class XiaomingBot {
     private Config config = jsonFileSavedDataFactory
             .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "config.json"),
                 Config.class,
-                    Config::new);
+                    () -> {
+                        Config c = new Config();
+                        final Config.BotAccount e = new Config.BotAccount(1525916855, "你的bot账户密码");
+                        c.getAccounts().add(e);
+                        return c;
+                    });
 
     public Config getConfig() {
         return config;

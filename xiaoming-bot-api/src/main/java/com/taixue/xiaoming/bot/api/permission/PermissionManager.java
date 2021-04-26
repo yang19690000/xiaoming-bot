@@ -89,8 +89,8 @@ public class PermissionManager extends JsonFileSavedData {
         if (Objects.equals(groupName, DEFAULT_PERMISSION_GROUP_NAME) &&
                 Objects.nonNull(defaultGroup)) {
             getLogger().warn("增加的权限组，将覆盖此前的默认权限组");
-            this.defaultGroup = group;
         }
+        this.defaultGroup = group;
         groups.put(groupName, group);
     }
 
