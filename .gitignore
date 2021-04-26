@@ -27,9 +27,7 @@ hs_err_pid*
 /config/
 /plugin/
 /xiaoming-bot.iml
-/xiaoming-bot-api/src/main/resources
 /xiaoming-bot-api/target
-/xiaoming-bot-host/src/main/resources
 /xiaoming-bot-host/target
 /xiaoming-bot-api/src/test/
 /xiaoming-bot-host/src/test/
