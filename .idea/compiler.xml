@@ -6,22 +6,22 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="xiaomingbot-host" />
-        <module name="xiaomingbot-lexicons" />
-        <module name="xiaomingbot-api" />
+        <module name="xiaoming-bot-api" />
+        <module name="xiaoming-bot-host" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="xiaoming-host" target="8" />
+      <module name="api" target="8" />
+      <module name="xiaoming-bot-core" target="8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="XiaomingBot" options="" />
-      <module name="xiaoming-host" options="-parameters" />
-      <module name="xiaomingbot-api" options="-parameters" />
-      <module name="xiaomingbot-host" options="-parameters" />
-      <module name="xiaomingbot-lexicons" options="-parameters" />
+      <module name="api" options="-parameters" />
+      <module name="xiaoming-bot" options="" />
+      <module name="xiaoming-bot-api" options="" />
+      <module name="xiaoming-bot-core" options="-parameters" />
+      <module name="xiaoming-bot-host" options="-parameters" />
     </option>
   </component>
 </project>
