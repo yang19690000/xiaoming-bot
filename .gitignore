@@ -22,13 +22,14 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-/.idea/
+.idea
 /account/
 /config/
 /plugin/
-/xiaoming-bot.iml
 /xiaoming-bot-api/target
 /xiaoming-bot-host/target
+/xiaoming-bot-core/target
 /xiaoming-bot-api/src/test/
 /xiaoming-bot-host/src/test/
+/xiaoming-bot-core/src/test/
 /cache/

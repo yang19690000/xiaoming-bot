@@ -1,2 +1,8 @@
-# XiaomingBot
-太学小明机器人。[开发文档](https://chuanwise.github.io/2021/04/19/%E5%B0%8F%E6%98%8E%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3/)
+# xiaoming-bot 
+## 小明机器人框架
+太学小明机器人。
+
+本项目有三个组件，api、core 和 host。
+其中，api 是一组小明调用标准，core 是对其的一种规范实现，host 则是小明本体的启动器。
+
+框架说明文档正在撰写，很快会和大家见面。
