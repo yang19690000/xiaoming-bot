@@ -8,7 +8,7 @@
 
     <properties>
         <simbot.version>2.0.6-BETA.2</simbot.version>
-        <xiaoming.version>1.0-TEST</xiaoming.version>
+        <xiaoming.version>1.0</xiaoming.version>
     </properties>
 
     <groupId>com.taixue.xiaoming.bot</groupId>

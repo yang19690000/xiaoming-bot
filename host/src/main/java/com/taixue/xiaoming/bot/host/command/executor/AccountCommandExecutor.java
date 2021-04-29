@@ -15,6 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * 和用户账号相关的指令处理器
+ * @author Chuanwise
+ */
 public class AccountCommandExecutor extends CommandExecutorImpl {
     private final AccountManager accountManager = getXiaomingBot().getAccountManager();
 

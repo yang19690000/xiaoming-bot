@@ -41,7 +41,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.3.4.RELEASE</version>
                 <configuration>
-                    <mainClass>com.taixue.xiaoming.bot.host.XiaomingHost</mainClass>
+                    <mainClass>com.taixue.xiaoming.bot.host.XiaomingLauncher</mainClass>
                 </configuration>
                 <executions>
                     <execution>

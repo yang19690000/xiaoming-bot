@@ -25,10 +25,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
 
-public abstract class InteractorImpl
-        extends PluginObjectImpl implements Interactor {
+/**
+ * 交互器标准实现
+ * @author Chuanwise
+ */
+public abstract class InteractorImpl extends PluginObjectImpl implements Interactor {
+    /**
+     * 用户数据隔离器
+     */
     private final Map<Long, InteractorUser> islocater = new HashMap<>();
 
+    /**
+     * 交互方法记录器
+     */
     private final Set<InteractorMethodDetail> interactorMethodDetails = new HashSet<>();
 
     /**
@@ -172,8 +181,6 @@ public abstract class InteractorImpl
                     putUser(user.getQQ(), interactorUser);
                 }
                 interactorUser.setMessageWaiter(messageWaiter);
-                // interactorUser.setAccountInfo(user.getAccountInfo());
-                // TODO: 2021/4/28 Check if it cause exception
             } else {
                 // 类型一致时只需要设置本次的数据就可以调度去了
                 if (interactorUser instanceof GroupInteractorUser) {

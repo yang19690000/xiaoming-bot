@@ -203,7 +203,7 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
         return false;
     }
 
-    public void reportToLog(final String message) {
+    private void reportToLog(final String message) {
         for (Group log : getXiaomingBot().getGroupManager().forTag("log")) {
             getXiaomingBot().getMsgSender().SENDER.sendGroupMsg(log.getCode(), message);
         }

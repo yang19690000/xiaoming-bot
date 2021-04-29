@@ -15,6 +15,10 @@ import com.taixue.xiaoming.bot.util.TimeUtil;
 
 import java.util.Objects;
 
+/**
+ * 和小明调用限制相关的指令处理器
+ * @author Chuanwise
+ */
 public class CallLimitCommandExecutor extends CommandExecutorImpl {
     private static final String CALL_REGEX = "(调用|召唤|call)";
     private UserCallLimitManager callLimitManager = getXiaomingBot().getUserCallLimitManager();

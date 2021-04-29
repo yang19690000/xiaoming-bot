@@ -16,6 +16,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * 小明响应群相关的指令处理器
+ * @author Chuanwise
+ */
 public class GroupCommandExecutor extends CommandExecutorImpl {
     private final GroupManager groupManager = getXiaomingBot().getGroupManager();
     private static final String TAG_REGEX = "(标记|标注|tag)";
@@ -54,7 +58,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.GROUP_REGEX + " {group}")
     @RequirePermission("group.look")
     public void onLookGroup(final XiaomingUser user,
-                            @CommandParameter("group") String groupString) {
+                            @CommandParameter("group") final String groupString) {
         Group group;
         if (groupString.matches("\\d+")) {
             group = groupManager.forGroup(Long.parseLong(groupString));
@@ -77,6 +81,26 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
         }
     }
 
+    @Command(CommandWordUtil.REMOVE_REGEX + CommandWordUtil.GROUP_REGEX + " {group}")
+    @RequirePermission("group.remove")
+    public void onRemoveGroup(final XiaomingUser user,
+                              @CommandParameter("group") final String groupString) {
+        Group group;
+        if (groupString.matches("\\d+")) {
+            group = groupManager.forGroup(Long.parseLong(groupString));
+        } else {
+            group = groupManager.forName(groupString);
+        }
+
+        if (Objects.isNull(group)) {
+            user.sendMessage("这个群并不是小明的响应群哦");
+        } else {
+            user.sendMessage("成功移除小明响应群：", getGroupName(group));
+            groupManager.getGroups().remove(group);
+            groupManager.save();
+        }
+    }
+
     @Command(CommandWordUtil.THIS_REGEX + CommandWordUtil.GROUP_REGEX)
     @RequirePermission("group.look")
     public void onLookThisGroup(final GroupXiaomingUser user) {
@@ -95,7 +119,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.GROUP_REGEX + " {key} " + TAG_REGEX)
     @RequirePermission("group.tag.list")
     public void onListGroupTags(final XiaomingUser user,
-                                @CommandParameter("key") String key) {
+                                @CommandParameter("key") final String key) {
         final Group group = groupManager.getGroups().get(key);
         if (Objects.isNull(group)) {
             user.sendError("找不到响应群：{}", key);
@@ -107,7 +131,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.GROUP_REGEX + TAG_REGEX)
     @RequirePermission("group.tag.list")
     public void onListGroupTags(final GroupXiaomingUser user,
-                                @CommandParameter("key") String key) {
+                                @CommandParameter("key") final String key) {
         final Group group = groupManager.forGroup(user.getGroup());
         if (Objects.isNull(group)) {
             user.sendError("意外：本群不是小明的响应群");
@@ -123,8 +147,8 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.GROUP_REGEX + " {key} " + TAG_REGEX + " " + CommandWordUtil.NEW_REGEX + " {tag}")
     @RequirePermission("group.tag.add")
     public void onAddGroupTag(final XiaomingUser user,
-                              @CommandParameter("key") String key,
-                              @CommandParameter("tag") String tag) {
+                              @CommandParameter("key") final String key,
+                              @CommandParameter("tag") final String tag) {
         final Group group = groupManager.getGroups().get(key);
         if (Objects.isNull(group)) {
             user.sendError("找不到响应群：{}", key);
@@ -143,7 +167,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.GROUP_REGEX + TAG_REGEX + " " + CommandWordUtil.NEW_REGEX + " {tag}")
     @RequirePermission("group.tag.add")
     public void onAddThisGroupTag(final GroupXiaomingUser user,
-                                  @CommandParameter("tag") String tag) {
+                                  @CommandParameter("tag") final String tag) {
         final Group group = groupManager.forGroup(user.getGroup());
         if (Objects.isNull(group)) {
             user.sendError("意外：本群不是小明的响应群");

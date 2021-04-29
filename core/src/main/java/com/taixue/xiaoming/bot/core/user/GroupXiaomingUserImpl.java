@@ -1,15 +1,14 @@
 package com.taixue.xiaoming.bot.core.user;
 
-import catcode.CatCodeUtil;
 import com.taixue.xiaoming.bot.api.user.GroupXiaomingUser;
 import love.forte.simbot.api.message.containers.AccountInfo;
 import love.forte.simbot.api.message.containers.GroupInfo;
 import love.forte.simbot.api.message.events.GroupMsg;
-import net.mamoe.mirai.contact.BotIsBeingMutedException;
 
-import java.io.IOException;
-import java.util.NoSuchElementException;
-
+/**
+ * 群聊中的小明调度器使用者
+ * @author Chuanwise
+ */
 public class GroupXiaomingUserImpl extends QQXiaomingUserImpl implements GroupXiaomingUser {
     private GroupMsg groupMsg;
 

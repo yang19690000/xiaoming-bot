@@ -7,12 +7,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 用于保存通用小明调用者信息的数据结构
+ */
 public interface Account extends FileSavedData {
+    /**
+     * 用户记录项（可以自行添加）
+     */
     Map<String, Object> getProperties();
 
+    /**
+     * 增加或覆盖用户记录项
+     */
     void putProperty(String key,
                      Object value);
 
+    /**
+     * 获得该用户屏蔽的插件
+     */
     Set<String> getBlockPlugins();
 
     void addBlockPlugin(String plugin);

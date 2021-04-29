@@ -8,7 +8,7 @@ import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.ConsoleDispatcherUser;
 import com.taixue.xiaoming.bot.core.command.executor.CommandExecutorImpl;
 import com.taixue.xiaoming.bot.core.user.XiaomingUserImpl;
-import com.taixue.xiaoming.bot.host.XiaomingHost;
+import com.taixue.xiaoming.bot.host.XiaomingLauncher;
 import com.taixue.xiaoming.bot.util.AtUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -99,14 +99,14 @@ public class ConsoleCommandRunnable extends CommandExecutorImpl implements Runna
             user.sendError("{} 似乎不是一个正确的 QQ 哦", qqString);
         }
 
-        XiaomingHost.getInstance().getConsoleXiaomingUser().setQQ(qq);
+        XiaomingLauncher.getInstance().getConsoleXiaomingUser().setQQ(qq);
         user.sendMessage("已设置控制台执行身份为 QQ：{}", qqString);
     }
 
     @Override
     public void run() {
         final CommandManager commandManager = getXiaomingBot().getCommandManager();
-        final ConsoleDispatcherUser consoleXiaomingUser = XiaomingHost.getInstance().getConsoleXiaomingUser();
+        final ConsoleDispatcherUser consoleXiaomingUser = XiaomingLauncher.getInstance().getConsoleXiaomingUser();
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
                 String input = scanner.nextLine();

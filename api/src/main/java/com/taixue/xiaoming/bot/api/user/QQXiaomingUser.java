@@ -9,6 +9,7 @@ import love.forte.simbot.api.sender.MsgSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
@@ -32,12 +33,15 @@ public interface QQXiaomingUser extends XiaomingUser {
     default void sendPrivateMessage(String message, Object... arguments) {
         try {
             getMsgSender().SENDER.sendPrivateMsg(getAccountInfo(), ArgumentUtil.replaceArguments(message, arguments));
-        } catch (TimeoutCancellationException exception) {
+
+            // 用于骗过编译器的抛出 IOException 的语句
+            // 这里确实会抛出异常。当图片无法加载时
+            if (false) {
+                throw new IOException();
+            }
+        } catch (IOException | TimeoutCancellationException ignored) {
         } catch (NoSuchElementException exception) {
-            getMsgSender().SENDER.sendPrivateMsg(getQQ(), "这条消息发不出去呢 " + getXiaomingBot().getEmojiManager().get("sad") +
-                    "，因为有找不到的图片");
-            exception.printStackTrace();
-        } catch (Exception exception) {
+            sendMessage("这条消息发不出去呢 " + getXiaomingBot().getEmojiManager().get("sad") + "，因为无法发起聊天或找不到相关资源");
             exception.printStackTrace();
         }
     }

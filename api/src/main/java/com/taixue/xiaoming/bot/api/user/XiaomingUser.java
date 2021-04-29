@@ -1,11 +1,12 @@
 package com.taixue.xiaoming.bot.api.user;
 
 import com.taixue.xiaoming.bot.api.account.Account;
+import com.taixue.xiaoming.bot.api.base.HostObject;
 import com.taixue.xiaoming.bot.api.base.XiaomingObject;
 import com.taixue.xiaoming.bot.api.bot.XiaomingBot;
 import org.jetbrains.annotations.NotNull;
 
-public interface XiaomingUser extends XiaomingObject {
+public interface XiaomingUser extends HostObject {
     void sendMessage(String message,
                      Object... arguments);
 
