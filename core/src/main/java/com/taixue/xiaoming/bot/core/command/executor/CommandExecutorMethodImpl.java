@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CommandExecutorMethodImpl implements CommandExecutorMethod {
-
     private Method method;
     private CommandFormatImpl[] formats;
     private String[] requiredPermission;
