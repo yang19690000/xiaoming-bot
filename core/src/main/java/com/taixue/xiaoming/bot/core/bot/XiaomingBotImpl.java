@@ -191,7 +191,7 @@ public class XiaomingBotImpl implements XiaomingBot {
         return userCallLimitManager;
     }
 
-    private Counter counter = fileSavedDataFactory.forFileOrProduce(new File(PathUtil.CONFIG_DIR, "counter.json"),
+    private Counter counter = fileSavedDataFactory.forFileOrProduce(new File(PathUtil.CONFIG_DIR, "counters.json"),
             CounterImpl.class,
             CounterImpl::new);
 
