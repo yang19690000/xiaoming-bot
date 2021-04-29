@@ -6,7 +6,6 @@ import love.forte.simbot.api.message.events.PrivateMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
 public class PrivateInteractorUserImpl extends InteractorUserImpl implements PrivateInteractorUser {
-    private MsgSender msgSender;
     private PrivateMsg privateMsg;
 
     @Override
@@ -15,18 +14,8 @@ public class PrivateInteractorUserImpl extends InteractorUserImpl implements Pri
     }
 
     @Override
-    public MsgSender getMsgSender() {
-        return msgSender;
-    }
-
-    @Override
     public String getMessage() {
         return privateMsg.getMsg();
-    }
-
-    @Override
-    protected void sendMessage(String message) {
-        sendPrivateMessage(message);
     }
 
     @Override
@@ -37,11 +26,6 @@ public class PrivateInteractorUserImpl extends InteractorUserImpl implements Pri
     @Override
     public String getName() {
         return getQQString();
-    }
-
-    @Override
-    public void setMsgSender(MsgSender msgSender) {
-        this.msgSender = msgSender;
     }
 
     @Override public void setPrivateMsg(PrivateMsg privateMsg) {

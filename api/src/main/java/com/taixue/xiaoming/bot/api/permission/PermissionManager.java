@@ -45,4 +45,6 @@ public interface PermissionManager extends FileSavedData {
 
     @NotNull
     PermissionUserNode getOrPutUserNode(Account account);
+
+    boolean isSuper(String sonName, String superName);
 }

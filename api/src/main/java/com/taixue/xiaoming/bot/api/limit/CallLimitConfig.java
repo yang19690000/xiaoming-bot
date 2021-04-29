@@ -9,9 +9,9 @@ public interface CallLimitConfig {
 
     void setPeriod(long period);
 
-    int getMaxCallNumber();
+    int getTop();
 
-    void setMaxCallNumber(int maxCallNumber);
+    void setTop(int top);
 
     void setDeltaNoticeTime(long time);
 

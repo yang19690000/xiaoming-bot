@@ -2,12 +2,10 @@ package com.taixue.xiaoming.bot.core.limit;
 
 import com.taixue.xiaoming.bot.api.limit.CallLimitConfig;
 import com.taixue.xiaoming.bot.api.limit.UserCallRecord;
-import com.taixue.xiaoming.bot.api.record.SizedRecorder;
-import com.taixue.xiaoming.bot.core.record.SizedRecorderImpl;
 import org.jetbrains.annotations.NotNull;
 
 public class UserCallRecordImpl implements UserCallRecord {
-    private SizedRecorder<Long> records = new SizedRecorderImpl<>();
+    private UserCallSizedRecord recentCalls = new UserCallSizedRecord();
     private long lastNoticeTime;
 
     @Override
@@ -22,17 +20,17 @@ public class UserCallRecordImpl implements UserCallRecord {
 
     @Override
     public long getLastestRecord() {
-        return records.latest();
+        return recentCalls.latest();
     }
 
     @Override
     public void addNewCall(final CallLimitConfig config) {
-        records.add(System.currentTimeMillis(), config.getMaxCallNumber());
+        recentCalls.add(System.currentTimeMillis(), config.getTop());
     }
 
     @Override
     public long getEarlyestRecord() {
-        return records.earlyest();
+        return recentCalls.earlyest();
     }
 
     @Override
@@ -43,30 +41,23 @@ public class UserCallRecordImpl implements UserCallRecord {
     // 因为在一定时间内调用太多次而不能调用
     @Override
     public boolean isTooManySoUncallable(final CallLimitConfig config) {
-        return getEarlyestRecord() + config.getPeriod() > System.currentTimeMillis();
+        return recentCalls.size() == config.getTop() && getEarlyestRecord() + config.getPeriod() > System.currentTimeMillis();
     }
 
     // 因为两次调用之间太快而不能调用
     @Override
     public boolean isTooFastSoUncallable(final CallLimitConfig config) {
-        return System.currentTimeMillis() < getLastestRecord() + config.getCoolDown();
+        return !recentCalls.empty() && System.currentTimeMillis() < getLastestRecord() + config.getCoolDown();
     }
 
     @Override
     @NotNull
     public Long[] list() {
-        return records.list();
+        return recentCalls.list();
     }
 
-    @Override public SizedRecorder<Long> getRecords() {
-        return records;
-    }
-
-    public void setRecords(SizedRecorder<Long> records) {
-        this.records = records;
-    }
-
-    public void setLastNoticeTime(long lastNoticeTime) {
-        this.lastNoticeTime = lastNoticeTime;
+    @Override
+    public UserCallSizedRecord getRecentCalls() {
+        return recentCalls;
     }
 }

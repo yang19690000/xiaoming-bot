@@ -23,9 +23,9 @@
 hs_err_pid*
 
 .idea
-/account/
-/config/
-/plugin/
+/accounts/
+/configs/
+/plugins/
 /xiaoming-bot-api/target
 /xiaoming-bot-host/target
 /xiaoming-bot-core/target
@@ -33,3 +33,4 @@ hs_err_pid*
 /xiaoming-bot-host/src/test/
 /xiaoming-bot-core/src/test/
 /cache/
+/backups/

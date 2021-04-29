@@ -50,18 +50,20 @@ public class MessageListener extends HostObjectImpl {
     public void onPrivateMessage(PrivateMsg privateMsg, MsgSender msgSender) {
         final long qq = privateMsg.getAccountInfo().getAccountCodeNumber();
 
-        if (privateCallLimiter.isTooManySoUncallable(qq) && privateCallLimiter.shouldNotice(qq)) {
-            final CallLimitConfig config = privateCallLimiter.getConfig();
-            final CallRecord userCallRecords = privateCallLimiter.getOrPutCallRecords(qq);
+        if (!getXiaomingBot().getPermissionManager().userHasPermission(qq, "limit.private.bypass")) {
+            if (privateCallLimiter.isTooManySoUncallable(qq) && privateCallLimiter.shouldNotice(qq)) {
+                final CallLimitConfig config = privateCallLimiter.getConfig();
+                final CallRecord userCallRecords = privateCallLimiter.getOrPutCallRecords(qq);
 
-            msgSender.SENDER.sendPrivateMsg(qq, "你" + TimeUtil.toTimeString(config.getPeriod()) + "内已经在群里召唤了" + config.getMaxCallNumber() + "次小明，" +
-                    "好好休息一下吧 " + getXiaomingBot().getEmojiManager().get("happy") + "（依旧可以私聊找我哦），" +
-                    TimeUtil.after(userCallRecords.getEarlyestRecord(), config.getDeltaNoticeTime()) + "就可以继续在群里召唤我啦");
-            privateCallLimiter.setNoticed(qq);
-            callLimitManager.save();
-        }
-        if (privateCallLimiter.uncallable(qq)) {
-            return;
+                msgSender.SENDER.sendPrivateMsg(qq, "你" + TimeUtil.toTimeString(config.getPeriod()) + "内已经私聊召唤了" + config.getTop() + "次小明，" +
+                        "好好休息一下吧 " + getXiaomingBot().getEmojiManager().get("happy") + "，" +
+                        TimeUtil.after(userCallRecords.getEarlyestRecord(), config.getDeltaNoticeTime()) + "就可以继续在群里召唤我啦");
+                privateCallLimiter.setNoticed(qq);
+                callLimitManager.save();
+            }
+            if (privateCallLimiter.uncallable(qq)) {
+                return;
+            }
         }
 
         DispatcherUser user = islocater.get(qq);
@@ -73,10 +75,9 @@ public class MessageListener extends HostObjectImpl {
         }
 
         final PrivateDispatcherUser privateDispatcherUser = (PrivateDispatcherUser) user;
-        privateDispatcherUser.setMsgSender(msgSender);
         privateDispatcherUser.setPrivateMsg(privateMsg);
         if (privateDispatcher.onMessage(privateDispatcherUser)) {
-            getXiaomingBot().getConfig().increaseCallCounter();
+            getXiaomingBot().getCounter().increaseCallCounter();
 
             // 保存本次输入
             final Account account = privateDispatcherUser.getOrPutAccount();
@@ -98,29 +99,29 @@ public class MessageListener extends HostObjectImpl {
             return;
         }
 
-        // 如果有调用记录，并且很长一段时间没有提醒调用太多次
-        if (groupCallLimiter.isTooManySoUncallable(qq) && groupCallLimiter.shouldNotice(qq)) {
-            final CallLimitConfig config = groupCallLimiter.getConfig();
-            final CallRecord userCallRecords = groupCallLimiter.getOrPutCallRecords(qq);
+        // 如果没权限跳过，且有调用记录，并且很长一段时间没有提醒调用太多次
+        if (!getXiaomingBot().getPermissionManager().userHasPermission(qq, "limit.group.bypass")) {
+            if (groupCallLimiter.isTooManySoUncallable(qq) && groupCallLimiter.shouldNotice(qq)) {
+                final CallLimitConfig config = groupCallLimiter.getConfig();
+                final CallRecord userCallRecords = groupCallLimiter.getOrPutCallRecords(qq);
 
-            msgSender.SENDER.sendPrivateMsg(qq, "你" + TimeUtil.toTimeString(config.getPeriod()) + "内已经在群里召唤了" + config.getMaxCallNumber() + "次小明，" +
-                    "好好休息一下吧 " + getXiaomingBot().getEmojiManager().get("happy") + "（依旧可以私聊找我哦），" +
-                    TimeUtil.after(userCallRecords.getEarlyestRecord(), config.getDeltaNoticeTime()) + "就可以继续在群里召唤我啦");
+                msgSender.SENDER.sendPrivateMsg(qq, "你" + TimeUtil.toTimeString(config.getPeriod()) + "内已经在群里召唤了" + config.getTop() + "次小明，" +
+                        "好好休息一下吧 " + getXiaomingBot().getEmojiManager().get("happy") + "，" +
+                        TimeUtil.after(userCallRecords.getEarlyestRecord(), config.getDeltaNoticeTime()) + "就可以继续在群里召唤我啦");
 
-            try {
-                msgSender.GETTER.getFriendInfo(qq);
-            } catch (Exception exception) {
-                msgSender.SENDER.sendPrivateMsg(qq, "只有添加我为好友（马上会通过哦）后小明才会查看你的私聊消息哦，赶快添加小明一起击剑吧 " + getXiaomingBot().getEmojiManager().get("happy"));
+                try {
+                    msgSender.GETTER.getFriendInfo(qq);
+                } catch (Exception exception) {
+                    msgSender.SENDER.sendPrivateMsg(qq, "只有添加我为好友（马上会通过哦）后小明才会注意到你的私聊消息哦，赶快添加小明一起击剑吧 " + getXiaomingBot().getEmojiManager().get("happy"));
+                }
+
+                groupCallLimiter.setNoticed(qq);
+                callLimitManager.save();
             }
-
-            groupCallLimiter.setNoticed(qq);
-            callLimitManager.save();
+            if (groupCallLimiter.uncallable(qq)) {
+                return;
+            }
         }
-        if (groupCallLimiter.uncallable(qq)) {
-            return;
-        }
-
-
 
         DispatcherUser user = islocater.get(qq);
         final Interactor interactor = Objects.nonNull(user) ? user.getInteractor() : null;
@@ -131,11 +132,10 @@ public class MessageListener extends HostObjectImpl {
         }
 
         final GroupDispatcherUser groupDispatcherUser = (GroupDispatcherUser) user;
-        groupDispatcherUser.setMsgSender(msgSender);
         groupDispatcherUser.setGroupMsg(groupMsg);
 
         if (groupDispatcher.onMessage(groupDispatcherUser)) {
-            getXiaomingBot().getConfig().increaseCallCounter();
+            getXiaomingBot().getCounter().increaseCallCounter();
 
             // 保存本次输入
             final Account account = groupDispatcherUser.getOrPutAccount();
@@ -162,6 +162,12 @@ public class MessageListener extends HostObjectImpl {
             }
             return false;
         }
+    }
+
+    @OnPrivate
+    @Filter(value = "安在？", matchType = MatchType.EQUALS)
+    public void onTryAsk(PrivateMsg privateMsg, MsgSender msgSender) {
+        msgSender.SENDER.sendPrivateMsg(privateMsg, "我仍然在哦");
     }
 
     @OnGroup

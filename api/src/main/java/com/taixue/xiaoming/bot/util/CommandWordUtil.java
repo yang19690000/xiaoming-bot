@@ -12,12 +12,14 @@ public class CommandWordUtil {
     public static final String PERMISSION_GROUP_REGEX = "(权限|权限组|permission)";
     public static final String ALIAS_REGEX = "(别名|昵称|绰号|备注|alias)";
     public static final String CONFIRM_REGEX = "(确认|confirm)";
-    public static final String USER_REGEX = "(玩家|用户|好友|user)";
+    public static final String USER_REGEX = "(用户|玩家|好友|user)";
     public static final String XIAOMING_REGEX = "((太学)?小明|xiaoming)";
     public static final String STATUS_REGEX = "(状态|status)";
     public static final String HELP_REGEX = "(帮助|说明|help)";
-    public static final String GROUP_REGEX = "(群|group)";
+    public static final String GROUP_REGEX = "(群聊|群|group)";
+    public static final String PRIVATE_REGEX = "(私聊|私|private)";
     public static final String COMMAND_EXECUTOR_REGEX = "(指令处理器|指令交互器|command-executor|command|executor)";
+    public static final String INTERACTOR_REGEX = "(交互器|interactor)";
     public static final String ILLEGAL_REGEX = "(非法|违规|禁用|禁止|illegal)";
     public static final String DISABLE_REGEX = "(关闭|禁用|禁止|disable)";
     public static final String ENABLE_REGEX = "(启用|启动|打开|enable)";

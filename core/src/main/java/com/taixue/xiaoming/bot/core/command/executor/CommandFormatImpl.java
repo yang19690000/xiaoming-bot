@@ -1,6 +1,7 @@
 package com.taixue.xiaoming.bot.core.command.executor;
 
 import com.taixue.xiaoming.bot.api.command.executor.CommandFormat;
+import com.taixue.xiaoming.bot.api.exception.XiaomingRuntimeException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -13,7 +14,7 @@ public class CommandFormatImpl implements CommandFormat {
     Set<String> variableNames;
 
     public CommandFormatImpl(@NotNull final String format) {
-        Pattern result = null;
+        Pattern result;
         StringBuilder patternBuilder = new StringBuilder();
 
         StringBuilder variableNameBuilder = new StringBuilder();
@@ -54,9 +55,9 @@ public class CommandFormatImpl implements CommandFormat {
                             final String variableName = variableNameBuilder.toString();
                             variableNames.add(variableName);
                             if (Objects.equals(variableName, "remain")) {
-                                patternBuilder.append("(?<remain>.*)");
+                                patternBuilder.append("(?<remain>" + REMAIN_VARIABLE_REGEX + ")");
                             } else {
-                                patternBuilder.append("(?<" + variableName + ">\\S+)");
+                                patternBuilder.append("(?<" + variableName + ">" + NORMAL_VARIABLE_REGEX + ")");
                             }
                             variableNameBuilder.setLength(0);
                             state = 0;
@@ -91,6 +92,8 @@ public class CommandFormatImpl implements CommandFormat {
                             variableRegexBuilder.append(ch);
                     }
                     break;
+                default:
+                    throw new XiaomingRuntimeException("在解析指令格式时出现错误的状态：" + state + "（位于指令处理器 " + getClass().getName() + "）");
             }
         }
         this.pattern = Pattern.compile(patternBuilder.toString());

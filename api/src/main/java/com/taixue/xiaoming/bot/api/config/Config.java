@@ -1,17 +1,15 @@
 package com.taixue.xiaoming.bot.api.config;
 
 import com.taixue.xiaoming.bot.api.data.FileSavedData;
-
-import java.util.List;
+import com.taixue.xiaoming.bot.api.limit.CallLimitConfig;
+import com.taixue.xiaoming.bot.api.limit.UserCallLimitManager;
 
 public interface Config extends FileSavedData {
     boolean isDebug();
 
     void setDebug(boolean debug);
 
-    long getCallCounter();
+    CallLimitConfig getGroupCallConfig();
 
-    void increaseCallCounter();
-
-    List<BotAccount> getAccounts();
+    CallLimitConfig getPrivateCallConfig();
 }

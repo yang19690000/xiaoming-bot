@@ -1,6 +1,7 @@
 package com.taixue.xiaoming.bot.core.user;
 
 import com.taixue.xiaoming.bot.api.user.PrivateXiaomingUser;
+import love.forte.simbot.api.message.containers.AccountInfo;
 import love.forte.simbot.api.message.events.PrivateMsg;
 
 /**
@@ -15,16 +16,15 @@ public class PrivateXiaomingUserImpl extends QQXiaomingUserImpl implements Priva
 
     public void setPrivateMsg(PrivateMsg privateMsg) {
         this.privateMsg = privateMsg;
-        setAccountInfo(privateMsg.getAccountInfo());
+    }
+
+    @Override
+    public AccountInfo getAccountInfo() {
+        return privateMsg.getAccountInfo();
     }
 
     @Override
     public String getMessage() {
         return privateMsg.getMsg();
-    }
-
-    @Override
-    protected void sendMessage(String message) {
-        sendPrivateMessage(message);
     }
 }

@@ -1,16 +1,16 @@
 package com.taixue.xiaoming.bot.core.config;
 
-import com.taixue.xiaoming.bot.api.config.BotAccount;
 import com.taixue.xiaoming.bot.api.config.Config;
+import com.taixue.xiaoming.bot.api.limit.CallLimitConfig;
+import com.taixue.xiaoming.bot.api.limit.UserCallLimiter;
 import com.taixue.xiaoming.bot.core.data.JsonFileSavedData;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.taixue.xiaoming.bot.core.limit.CallLimitConfigImpl;
+import com.taixue.xiaoming.bot.core.limit.UserCallLimiterImpl;
 
 public class ConfigImpl extends JsonFileSavedData implements Config {
-    private volatile boolean debug = false;
-    private volatile long callCounter = 0;
-    private List<BotAccount> accounts = new ArrayList<>();
+    private boolean debug = false;
+    private CallLimitConfig groupCallLimiter = new CallLimitConfigImpl();
+    private CallLimitConfig privateCallLimiter = new CallLimitConfigImpl();
 
     @Override
     public boolean isDebug() {
@@ -23,26 +23,12 @@ public class ConfigImpl extends JsonFileSavedData implements Config {
     }
 
     @Override
-    public long getCallCounter() {
-        return callCounter;
+    public CallLimitConfig getGroupCallConfig() {
+        return groupCallLimiter;
     }
 
     @Override
-    public void increaseCallCounter() {
-        callCounter++;
-        save();
-    }
-
-    @Override
-    public List<BotAccount> getAccounts() {
-        return accounts;
-    }
-
-    public void setCallCounter(long callCounter) {
-        this.callCounter = callCounter;
-    }
-
-    public void setAccounts(List<BotAccount> accounts) {
-        this.accounts = accounts;
+    public CallLimitConfig getPrivateCallConfig() {
+        return privateCallLimiter;
     }
 }

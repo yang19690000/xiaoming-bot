@@ -6,7 +6,7 @@ import com.taixue.xiaoming.bot.util.TimeUtil;
 public class CallLimitConfigImpl implements CallLimitConfig {
     private long coolDown = TimeUtil.SECOND_MINS * 10;
     private long period = TimeUtil.HOUR_MINS * 12;
-    private int maxCallNumber = 10;
+    private int top = 10;
     private long deltaNoticeTime = period;
 
     @Override
@@ -30,13 +30,13 @@ public class CallLimitConfigImpl implements CallLimitConfig {
     }
 
     @Override
-    public int getMaxCallNumber() {
-        return maxCallNumber;
+    public int getTop() {
+        return top;
     }
 
     @Override
-    public void setMaxCallNumber(int maxCallNumber) {
-        this.maxCallNumber = maxCallNumber;
+    public void setTop(int top) {
+        this.top = top;
     }
 
     @Override

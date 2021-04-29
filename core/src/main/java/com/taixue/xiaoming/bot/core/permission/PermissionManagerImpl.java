@@ -136,7 +136,7 @@ public class PermissionManagerImpl extends JsonFileSavedData implements Permissi
                 }
                 userNode.setPermissions(permissions);
             }
-            return save();
+            return true;
         } else {
             return false;
         }
@@ -171,7 +171,23 @@ public class PermissionManagerImpl extends JsonFileSavedData implements Permissi
             permission.setGroup(DEFAULT_PERMISSION_GROUP_NAME);
             account.putProperty("permission", permission);
         }
-        save();
         return permission;
+    }
+
+    @Override
+    public boolean isSuper(String superName, String sonName) {
+        final PermissionGroup sonGroup = getGroup(sonName);
+        final PermissionGroup superGroup = getGroup(superName);
+
+        if (Objects.isNull(sonGroup) || Objects.isNull(superGroup)) {
+            return false;
+        } else {
+            for (String groupName : sonGroup.getSuperGroups()) {
+                if (groupName.equals(superName) || isSuper(superName, groupName)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

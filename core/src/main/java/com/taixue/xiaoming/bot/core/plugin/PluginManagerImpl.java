@@ -7,6 +7,7 @@ import com.taixue.xiaoming.bot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaoming.bot.api.user.XiaomingUser;
 import com.taixue.xiaoming.bot.core.base.HostObjectImpl;
 import com.taixue.xiaoming.bot.util.JsonSerializerUtil;
+import com.taixue.xiaoming.bot.util.PathUtil;
 import com.taixue.xiaoming.bot.util.PluginLoaderUtil;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -26,18 +28,23 @@ import java.util.zip.ZipEntry;
  * 如果最终加载插件数和插件文件总数相等，所有插件均加载成功，否则有的插件加载失败。
  */
 public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
-    public final File directory;
+    private final File directory = PathUtil.PLUGIN_DIR;
 
-    public PluginManagerImpl(File directory) {
-        this.directory = directory;
-    }
+    /**
+     * 只要出现在插件文件夹并能被读取的，都被存放在这里
+     */
+    private BidiMap<String, PluginProperty> pluginPropertyMap = new DualHashBidiMap<>();
 
-    private BidiMap pluginBidiMap = new DualHashBidiMap();
-
+    /**
+     * 加载成功了的插件
+     */
     private Set<XiaomingPlugin> loadedPlugins = new HashSet<>();
 
+    /**
+     * 判断插件是否加载成功
+     */
     @Override
-    public boolean isLoaded(String pluginName) {
+    public boolean isLoaded(final String pluginName) {
         for (XiaomingPlugin loadedPlugin : loadedPlugins) {
             if (Objects.equals(loadedPlugin.getName(), pluginName)) {
                 return true;
@@ -46,43 +53,78 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         return false;
     }
 
+    /**
+     * 获得已经加载了的插件集合
+     */
     @Override
     public Set<XiaomingPlugin> getLoadedPlugins() {
         return loadedPlugins;
     }
 
+    /**
+     * 通过 property 加载一个指定的插件
+     * @return 加载好的插件实例。如果加载失败则为 null
+     */
     @Override
-    public boolean loadPlugin(final XiaomingUser sender,
+    public XiaomingPlugin loadPlugin(final XiaomingUser sender,
                               final PluginProperty property) {
-        XiaomingPlugin plugin = null;
-        final File pluginFile = property.getPluginFile();
+        final XiaomingPlugin plugin;
+        final String pluginMainClassName = property.getMain();
+        final File pluginJarFile = property.getPluginFile();
 
+        final URLClassLoader urlClassLoader;
+        final Class<?> pluginClass;
+
+        // 扩展类加载器
         try {
-            plugin = PluginLoaderUtil.loadPluginInstance(pluginFile, property.getMain(), XiaomingPlugin.class);
-        } catch (ClassCastException classCastException) {
-            sender.sendError("插件主类：{} 不是 {} 的子类", property.getMain(), XiaomingPlugin.class.getName());
-            return false;
+            urlClassLoader = PluginLoaderUtil.extendURLClassLoader(pluginJarFile, ((URLClassLoader) XiaomingPlugin.class.getClassLoader()));
         } catch (Exception exception) {
-            sender.sendError("加载插件 {} 的主类 {} 时出现异常：{}", property.get("name"), property.getMain(), exception);
+            sender.sendError("无法扩展类加载器。请将此错误报告反馈给小明");
             exception.printStackTrace();
-            return false;
+            return null;
+        }
+
+        // 加载插件主类
+        try {
+            pluginClass = urlClassLoader.loadClass(pluginMainClassName);
+        } catch (ClassNotFoundException classNotFoundException) {
+            sender.sendError("找不到插件主类：{}", pluginMainClassName);
+            classNotFoundException.printStackTrace();
+            return null;
+        }
+
+        // 检查插件主类是否为 XiaomingPlugin 的子类
+        if (!XiaomingPlugin.class.isAssignableFrom(pluginClass)) {
+            sender.sendError("插件主类：{}不是{}的子类，无法被小明加载", pluginMainClassName, XiaomingPlugin.class.getName());
+            return null;
+        }
+
+        // 尝试调用默认构造函数
+        try {
+            plugin = (XiaomingPlugin) pluginClass.newInstance();
+        } catch (IllegalAccessException exception) {
+            sender.sendError("无法访问插件主类：{}的构造函数，请为其准备一个默认的无参构造函数", pluginMainClassName);
+            return null;
+        } catch (Exception exception) {
+            sender.sendError("构造插件主类时出现异常：{}，请检查{}的默认的无参构造函数", pluginMainClassName, exception);
+            exception.printStackTrace();
+            return null;
         }
 
         plugin.setProperty(property);
-        plugin.setClassLoader(PluginLoaderUtil.urlClassLoader(pluginFile));
-
-        if (enablePlugin(sender, plugin)) {
-            loadedPlugins.add(plugin);
-        }
-        return true;
+        plugin.setClassLoader(urlClassLoader);
+        return enablePlugin(sender, plugin) ? plugin : null;
     }
 
+    /**
+     * 尝试加载所有的插件
+     */
     @Override
     public void loadAllPlugins(final XiaomingUser user) {
         // 本次需要加载的插件
         pushAllUnloadLoader(user);
 
-        if (pluginBidiMap.isEmpty()) {
+        if (pluginPropertyMap.isEmpty()) {
             user.sendMessage("没有本次需要加载的插件");
             return;
         }
@@ -92,7 +134,7 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         int lastLoadedPluginNumber;
         do {
             lastLoadedPluginNumber = loadedPlugins.size();
-            for (PluginProperty value : ((Set<PluginProperty>) pluginBidiMap.values())) {
+            for (PluginProperty value : ((Set<PluginProperty>) pluginPropertyMap.values())) {
                 tryLoadPlugin(user, value);
             }
         } while (lastLoadedPluginNumber != loadedPlugins.size());
@@ -125,11 +167,11 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         }
 
         if (allFrontLoaded) {
-            try {
-                return loadPlugin(sender, property);
-            } catch (Exception e) {
-                sender.sendError("加载插件：{} 时出现异常：{}", property.getName(), e);
-                e.printStackTrace();
+            final XiaomingPlugin xiaomingPlugin = loadPlugin(sender, property);
+            if (Objects.nonNull(xiaomingPlugin)) {
+                loadedPlugins.add(xiaomingPlugin);
+                return true;
+            } else {
                 return false;
             }
         } else {
@@ -137,6 +179,9 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         }
     }
 
+    /**
+     * 获得加载好了的插件
+     */
     @Override
     @Nullable
     public XiaomingPlugin getPlugin(final String pluginName) {
@@ -148,9 +193,13 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         return null;
     }
 
+    /**
+     * 卸载插件
+     */
     @Override
-    public boolean unloadPlugin(final XiaomingUser sender, String pluginName) {
-        XiaomingPlugin plugin = getPlugin(pluginName);
+    public boolean unloadPlugin(final XiaomingUser sender,
+                                final String pluginName) {
+        final XiaomingPlugin plugin = getPlugin(pluginName);
         if (Objects.nonNull(plugin)) {
             unloadPlugin(sender, plugin);
             return true;
@@ -159,10 +208,14 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         }
     }
 
+    /**
+     * 重载所有插件
+     * @param sender
+     */
     @Override
     public void reloadAll(final XiaomingUser sender) {
         for (XiaomingPlugin loadedPlugin : loadedPlugins) {
-            unloadPlugin(sender, loadedPlugin);
+            reloadPlugin(sender, loadedPlugin);
         }
     }
 
@@ -172,8 +225,14 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         if (!isLoaded(pluginName)) {
             return false;
         }
-        final PluginProperty property = (PluginProperty) pluginBidiMap.get(pluginName);
+        final PluginProperty property = (PluginProperty) pluginPropertyMap.get(pluginName);
         return Objects.nonNull(property) && reloadPlugin(sender, property);
+    }
+
+    @Override
+    public boolean reloadPlugin(final XiaomingUser sender,
+                                final XiaomingPlugin plugin) {
+        return reloadPlugin(sender, plugin.getProperty());
     }
 
     @Override
@@ -219,7 +278,7 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
         try {
             plugin.unHookAll();
         } catch (Exception exception) {
-            user.sendError("和插件脱钩时出现异常：{}，相关插件可能无法正常运行。", exception);
+            user.sendError("和插件脱钩时出现异常：{}，相关插件可能不会正常运行。", exception);
             exception.printStackTrace();
         }
         getXiaomingBot().getInteractorManager().getPluginInteractors().remove(plugin);
@@ -228,23 +287,25 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
 
     @Override
     @Nullable
-    public PluginProperty getPluginProperty(final JarFile jarFile) throws IOException {
+    public PluginProperty getPluginProperty(final JarFile jarFile)
+            throws IOException {
         // 获取插件属性 plugin.json
         ZipEntry entry = jarFile.getEntry("plugin.json");
         if (Objects.isNull(entry)) {
             return null;
         }
 
-        PluginProperty pluginProperty = null;
+        final PluginProperty pluginProperty;
         try (InputStream inputStream = jarFile.getInputStream(entry);) {
-            pluginProperty = (PluginProperty) JSON.parseObject(inputStream, PluginPropertyImpl.class);
+            pluginProperty = JsonSerializerUtil.getInstance().readValue(inputStream, PluginProperty.class);
         }
         return pluginProperty;
     }
 
     @Override
     @Nullable
-    public PluginProperty getPluginProperty(final File pluginFile) throws IOException {
+    public PluginProperty getPluginProperty(final File pluginFile)
+            throws IOException {
         return getPluginProperty(new JarFile(pluginFile));
     }
 
@@ -261,7 +322,7 @@ public class PluginManagerImpl extends HostObjectImpl implements PluginManager {
                         final InputStream inputStream = jarFile.getInputStream(pluginPropertyEntry);
                         final PluginProperty property = JsonSerializerUtil.getInstance().readValue(inputStream, PluginPropertyImpl.class);
                         property.setPluginFile(pluginFile);
-                        pluginBidiMap.put(property.getName(), property);
+                        pluginPropertyMap.put(property.getName(), property);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

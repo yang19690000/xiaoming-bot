@@ -10,40 +10,35 @@ import java.util.*;
  * 某种东西的记录器，可以用来记录
  * @author Chuanwise
  */
-public class SizedRecorderImpl<DataType> implements SizedRecorder<DataType> {
-    private Queue<DataType> data = new LinkedList<>();
+public abstract class SizedRecorderImpl<DataType> implements SizedRecorder<DataType> {
+    private List<DataType> records = new ArrayList<>();
 
     @Override
     public void add(final DataType value, final int size) {
-        if (data.size() >= size) {
-            data.remove();
+        if (records.size() > size) {
+            records.remove(records.size() - 1);
         }
-        data.add(value);
+        records.add(value);
     }
 
     @Override
     @Nullable
     public DataType latest() {
-        return data.peek();
+        return records.get(records.size() - 1);
     }
 
     @Override
     @Nullable
     public DataType earlyest() {
-        return data.poll();
+        return records.get(0);
     }
 
     @Override
-    @NotNull
-    public DataType[] list() {
-        return ((DataType[]) data.toArray());
+    public int size() {
+        return records.size();
     }
 
-    public Queue<DataType> getData() {
-        return data;
-    }
-
-    public void setData(Queue<DataType> data) {
-        this.data = data;
+    public List<DataType> getRecords() {
+        return records;
     }
 }

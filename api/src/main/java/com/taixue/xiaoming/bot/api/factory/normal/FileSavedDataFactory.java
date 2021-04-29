@@ -11,12 +11,11 @@ import java.util.Objects;
 
 public interface FileSavedDataFactory {
     @Nullable
-    default  <T extends FileSavedData> T forFile(final File file,
-                                               final Class<T> clazz) {
+    default <T extends FileSavedData> T forFile(final File file,
+                                                final Class<T> clazz) {
         try {
-            final T result = forFileThrowsException(file, clazz);
-            return result;
-        } catch (Exception exception) {
+            return forFileThrowsException(file, clazz);
+        } catch (IOException exception) {
             exception.printStackTrace();
             return null;
         }
@@ -29,9 +28,9 @@ public interface FileSavedDataFactory {
      * 使用某指定工厂生成一个新的文件数据
      */
     @NotNull
-    default  <T extends FileSavedData> T forFileOrProduce(final File file,
-                                                        final Class<T> clazz,
-                                                        final DefaultFileSavedDataFactory<T> factory) {
+    default <T extends FileSavedData> T forFileOrProduce(final File file,
+                                                         final Class<T> clazz,
+                                                         final DefaultFileSavedDataFactory<T> factory) {
         T result = null;
         if (file.exists()) {
             result = forFile(file, clazz);

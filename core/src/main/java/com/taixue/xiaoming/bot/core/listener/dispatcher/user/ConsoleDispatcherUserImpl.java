@@ -3,6 +3,8 @@ package com.taixue.xiaoming.bot.core.listener.dispatcher.user;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.ConsoleDispatcherUser;
 import com.taixue.xiaoming.bot.util.ArgumentUtil;
 import love.forte.common.ioc.annotation.Beans;
+import love.forte.common.ioc.annotation.Depend;
+import love.forte.simbot.api.message.containers.AccountInfo;
 import love.forte.simbot.api.message.containers.GroupInfo;
 import love.forte.simbot.api.sender.MsgSender;
 
@@ -12,7 +14,8 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
     private long qq;
     private long group;
 
-    @Override public void setMessage(String message) {
+    @Override
+    public void setMessage(String message) {
         this.message = message;
     }
 
@@ -32,23 +35,13 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
     }
 
     @Override
-    protected void sendMessage(final String message) {
-        getLogger().info(message);
-    }
-
-    @Override
-    public void sendError(String message, Object... arguments) {
-        getLogger().error(ArgumentUtil.replaceArguments(message, arguments));
-    }
-
-    @Override
-    public void sendWarning(String message, Object... arguments) {
-        getLogger().warn(ArgumentUtil.replaceArguments(message, arguments));
+    public AccountInfo getAccountInfo() {
+        return getMsgSender().GETTER.getFriendInfo(getQQ());
     }
 
     @Override
     public MsgSender getMsgSender() {
-        return null;
+        return getXiaomingBot().getMsgSender();
     }
 
     @Override
@@ -61,20 +54,33 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
         return getMsgSender().GETTER.getGroupInfo(getGroup());
     }
 
-    @Override public long getGroup() {
+    @Override
+    public long getGroup() {
         return group;
     }
 
-    @Override public void setQQ(long qq) {
+    @Override
+    public void setQQ(long qq) {
         this.qq = qq;
     }
 
-    @Override public void setGroup(long group) {
+    @Override
+    public void setGroup(long group) {
         this.group = group;
     }
 
     @Override
     public String getQQString() {
         return String.valueOf(getQQ());
+    }
+
+    @Override
+    public void sendGroupMessage(String message) {
+        getLogger().info("(群消息：)" + getGroupString() + "：" + message);
+    }
+
+    @Override
+    public void sendPrivateMessage(String message, Object... arguments) {
+        getLogger().info("(私聊消息：)：" + message);
     }
 }

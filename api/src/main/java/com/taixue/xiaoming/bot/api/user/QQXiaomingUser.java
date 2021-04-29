@@ -17,7 +17,9 @@ import java.util.NoSuchElementException;
 public interface QQXiaomingUser extends XiaomingUser {
     AccountInfo getAccountInfo();
 
-    MsgSender getMsgSender();
+    default MsgSender getMsgSender() {
+        return getXiaomingBot().getMsgSender();
+    }
 
     default long getQQ() {
         return getAccountInfo().getAccountCodeNumber();
@@ -32,7 +34,8 @@ public interface QQXiaomingUser extends XiaomingUser {
             getMsgSender().SENDER.sendPrivateMsg(getAccountInfo(), ArgumentUtil.replaceArguments(message, arguments));
         } catch (TimeoutCancellationException exception) {
         } catch (NoSuchElementException exception) {
-            getMsgSender().SENDER.sendPrivateMsg(getAccountInfo(), "这条消息发不出去哦，因为包含了小明找不到的图片");
+            getMsgSender().SENDER.sendPrivateMsg(getQQ(), "这条消息发不出去呢 " + getXiaomingBot().getEmojiManager().get("sad") +
+                    "，因为有找不到的图片");
             exception.printStackTrace();
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -49,5 +52,22 @@ public interface QQXiaomingUser extends XiaomingUser {
     @NotNull
     default Account getOrPutAccount() {
         return XiaomingBot.getInstance().getAccountManager().getOrPutAccount(getQQ(), getAccountInfo().getAccountRemarkOrNickname());
+    }
+
+    void sendNoArgumentMessage(String message);
+
+    @Override
+    default void sendMessage(String message, Object... arguments) {
+        sendNoArgumentMessage(ArgumentUtil.replaceArguments(message, arguments));
+    }
+
+    @Override
+    default void sendError(String message, Object... arguments) {
+        sendMessage(getXiaomingBot().getEmojiManager().get("error") + " " + message, arguments);
+    }
+
+    @Override
+    default void sendWarning(String message, Object... arguments) {
+        sendMessage(getXiaomingBot().getEmojiManager().get("error") + " " + message, arguments);
     }
 }

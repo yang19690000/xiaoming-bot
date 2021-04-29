@@ -5,17 +5,20 @@ import com.taixue.xiaoming.bot.api.bot.XiaomingBotContainer;
 import com.taixue.xiaoming.bot.api.bot.XiaomingBot;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
 import com.taixue.xiaoming.bot.api.config.BotAccount;
+import com.taixue.xiaoming.bot.api.config.Config;
+import com.taixue.xiaoming.bot.api.config.Counter;
 import com.taixue.xiaoming.bot.api.factory.normal.FileSavedDataFactory;
 import com.taixue.xiaoming.bot.api.limit.UserCallLimitManager;
+import com.taixue.xiaoming.bot.core.config.ConfigImpl;
 import com.taixue.xiaoming.bot.core.limit.UserCallLimitManagerImpl;
 import com.taixue.xiaoming.bot.core.command.executor.CommandManagerImpl;
 import com.taixue.xiaoming.bot.core.config.BotAccountImpl;
-import com.taixue.xiaoming.bot.api.config.Config;
+import com.taixue.xiaoming.bot.api.config.BotAccountConfig;
 import com.taixue.xiaoming.bot.api.emoji.EmojiManager;
 import com.taixue.xiaoming.bot.core.factory.normal.JsonFileSavedDataFactory;
 import com.taixue.xiaoming.bot.api.group.GroupManager;
 import com.taixue.xiaoming.bot.core.account.AccountManagerImpl;
-import com.taixue.xiaoming.bot.core.config.ConfigImpl;
+import com.taixue.xiaoming.bot.core.config.BotAccountConfigImpl;
 import com.taixue.xiaoming.bot.core.emoji.EmojiManagerImpl;
 import com.taixue.xiaoming.bot.core.group.GroupManagerImpl;
 import com.taixue.xiaoming.bot.core.limit.CallLimitConfigImpl;
@@ -24,13 +27,17 @@ import com.taixue.xiaoming.bot.api.permission.PermissionGroup;
 import com.taixue.xiaoming.bot.api.permission.PermissionManager;
 import com.taixue.xiaoming.bot.api.url.UrlInCatCodeManager;
 import com.taixue.xiaoming.bot.api.plugin.PluginManager;
-import com.taixue.xiaoming.bot.api.limit.UserCallRecord;
 import com.taixue.xiaoming.bot.core.listener.interactor.InteractorManagerImpl;
 import com.taixue.xiaoming.bot.core.permission.PermissionGroupImpl;
 import com.taixue.xiaoming.bot.core.permission.PermissionManagerImpl;
 import com.taixue.xiaoming.bot.core.plugin.PluginManagerImpl;
+import com.taixue.xiaoming.bot.core.config.CounterImpl;
 import com.taixue.xiaoming.bot.core.url.UrlInCatCodeInCatCodeManagerImpl;
 import com.taixue.xiaoming.bot.util.PathUtil;
+import love.forte.common.ioc.annotation.Beans;
+import love.forte.common.ioc.annotation.Depend;
+import love.forte.simbot.api.sender.MsgSender;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.concurrent.ExecutorService;
@@ -48,16 +55,38 @@ public class XiaomingBotImpl implements XiaomingBot {
         return fileSavedDataFactory;
     }
 
+    private MsgSender msgSender;
+
+    @Override
+    @NotNull
+    public MsgSender getMsgSender() {
+        return msgSender;
+    }
+
+    public void setMsgSender(@NotNull MsgSender msgSender) {
+        this.msgSender = msgSender;
+    }
+
     // 小明各大组件
-    private Config config = fileSavedDataFactory
-            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "config.json"),
-                    ConfigImpl.class,
+    private BotAccountConfig botAccountConfig = fileSavedDataFactory
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "bots.json"),
+                    BotAccountConfigImpl.class,
                     () -> {
-                        ConfigImpl c = new ConfigImpl();
+                        BotAccountConfigImpl c = new BotAccountConfigImpl();
                         final BotAccount e = new BotAccountImpl(1525916855, "你的bot账户密码");
                         c.getAccounts().add(e);
                         return c;
                     });
+
+    @Override
+    public BotAccountConfig getBotAccountConfig() {
+        return botAccountConfig;
+    }
+
+    private Config config = fileSavedDataFactory
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "configs.json"),
+                    ConfigImpl.class,
+                    ConfigImpl::new);
 
     @Override
     public Config getConfig() {
@@ -65,7 +94,7 @@ public class XiaomingBotImpl implements XiaomingBot {
     }
 
     private EmojiManager emojiManager = fileSavedDataFactory
-            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "emoji.json"),
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "emojis.json"),
                     EmojiManagerImpl.class,
                     EmojiManagerImpl::new);
 
@@ -82,7 +111,7 @@ public class XiaomingBotImpl implements XiaomingBot {
     }
 
     private PermissionManager permissionManager = fileSavedDataFactory
-            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "permission.json"),
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "permissions.json"),
                     PermissionManagerImpl.class,
                     () -> {
                         PermissionManagerImpl manager = new PermissionManagerImpl();
@@ -99,7 +128,7 @@ public class XiaomingBotImpl implements XiaomingBot {
     }
 
     private GroupManager groupManager = fileSavedDataFactory
-            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "group.json"),
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "groups.json"),
                     GroupManagerImpl.class,
                     GroupManagerImpl::new);
 
@@ -124,7 +153,7 @@ public class XiaomingBotImpl implements XiaomingBot {
         return commandManager;
     }
 
-    private PluginManager pluginManager = new PluginManagerImpl(PathUtil.PLUGIN_DIR);
+    private PluginManager pluginManager = new PluginManagerImpl();
 
     @Override
     public PluginManager getPluginManager() {
@@ -139,7 +168,7 @@ public class XiaomingBotImpl implements XiaomingBot {
     }
 
     private UrlInCatCodeManager pictureManager = fileSavedDataFactory
-            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "picture.json"),
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "pictures.json"),
                     UrlInCatCodeInCatCodeManagerImpl.class,
                     UrlInCatCodeInCatCodeManagerImpl::new);
 
@@ -148,8 +177,7 @@ public class XiaomingBotImpl implements XiaomingBot {
         return pictureManager;
     }
 
-    private UserCallLimitManager userCallLimitManager = fileSavedDataFactory.forFileOrProduce(new File(PathUtil.CONFIG_DIR,
-                    "limit.json"),
+    private UserCallLimitManager userCallLimitManager = fileSavedDataFactory.forFileOrProduce(new File(PathUtil.CONFIG_DIR, "limit.json"),
             UserCallLimitManagerImpl.class,
             () -> {
                 UserCallLimitManagerImpl manager = new UserCallLimitManagerImpl();
@@ -161,5 +189,14 @@ public class XiaomingBotImpl implements XiaomingBot {
     @Override
     public UserCallLimitManager getUserCallLimitManager() {
         return userCallLimitManager;
+    }
+
+    private Counter counter = fileSavedDataFactory.forFileOrProduce(new File(PathUtil.CONFIG_DIR, "counter.json"),
+            CounterImpl.class,
+            CounterImpl::new);
+
+    @Override
+    public Counter getCounter() {
+        return counter;
     }
 }

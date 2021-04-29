@@ -84,6 +84,9 @@ public class TimeUtil {
                 currentNumber = 0;
                 continue;
             }
+            if (Character.isSpaceChar(timeString.charAt(index))) {
+                continue;
+            }
             return -1;
         }
         return totalTime;

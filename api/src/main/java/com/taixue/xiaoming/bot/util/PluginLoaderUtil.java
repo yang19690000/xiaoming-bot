@@ -3,13 +3,15 @@ package com.taixue.xiaoming.bot.util;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * 插件加载器
+ * 插件类加载器
  * @author Chuanwise
  */
 public class PluginLoaderUtil {
@@ -18,52 +20,31 @@ public class PluginLoaderUtil {
      * @param jarFile
      * @return
      */
-    @Nullable
-    public static URLClassLoader urlClassLoader(final File jarFile) {
-        if (jarFile.exists() && jarFile.getName().endsWith(".jar")) {
-            try {
-                URLClassLoader urlClassLoader = URLClassLoader.newInstance(new URL[]{jarFile.toURL()},
-                        PluginLoaderUtil.class.getClassLoader());
-                return urlClassLoader;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-        else {
-            return null;
-        }
+    public static ClassLoader urlClassLoader(final File jarFile,
+                                             final ClassLoader father)
+            throws MalformedURLException {
+        return URLClassLoader.newInstance(new URL[]{jarFile.toURL()}, father);
     }
 
-    public static <T> T loadClass(final URLClassLoader urlClassLoader,
-                                  final String className,
-                                  final Class<T> clazz)
-            throws ClassNotFoundException, ClassCastException {
-        return ((T) urlClassLoader.loadClass(className));
+    /**
+     * 在一个 URL 类加载器中增加一个 URL。如果这个类加载器中已经有这个 URL，则本操作无影响
+     * @param jarFile
+     * @return
+     */
+    public static URLClassLoader extendURLClassLoader(final File jarFile,
+                                                      final URLClassLoader father)
+            throws Exception {
+        final Method addURL = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+        addURL.setAccessible(true);
+        addURL.invoke(father, jarFile.toURI().toURL());
+        addURL.setAccessible(false);
+        return father;
     }
 
-    @Nullable
-    public static Class loadClass(final File jarFile,
-                                  final String className)
-            throws ClassNotFoundException, ClassCastException {
-        if (!jarFile.exists()) {
-            return null;
-        }
-        URLClassLoader urlClassLoader = urlClassLoader(jarFile);
-        if (Objects.isNull(urlClassLoader)) {
-            return null;
-        }
-        return urlClassLoader.loadClass(className);
-    }
 
     @Nullable
-    public static <T> T loadPluginInstance(final File jarFile, final String className, final Class<T> pluginClass)
-        throws ClassNotFoundException, ClassCastException, InstantiationException, IllegalAccessException {
-        Class aClass = loadClass(jarFile, className);
-        if (Objects.isNull(aClass) ||
-                !pluginClass.isAssignableFrom(aClass)) {
-            return null;
-        }
-        return ((T) aClass.newInstance());
+    public static Class loadClass(final File jarFile, final String className, final ClassLoader classLoader)
+            throws Exception {
+        return extendURLClassLoader(jarFile, ((URLClassLoader) classLoader)).loadClass(className);
     }
 }

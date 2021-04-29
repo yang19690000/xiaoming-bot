@@ -3,6 +3,8 @@ package com.taixue.xiaoming.bot.core.account;
 import com.taixue.xiaoming.bot.api.account.Account;
 import com.taixue.xiaoming.bot.api.account.AccountManager;
 import com.taixue.xiaoming.bot.core.base.HostObjectImpl;
+import love.forte.simbot.api.message.results.FriendInfo;
+import love.forte.simbot.api.sender.MsgSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +54,13 @@ public class AccountManagerImpl extends HostObjectImpl implements AccountManager
     @Override
     @NotNull
     public Account getOrPutAccount(final long qq) {
-        return getOrPutAccount(qq, null);
+        final MsgSender msgSender = getXiaomingBot().getMsgSender();
+        try {
+            final FriendInfo friendInfo = msgSender.GETTER.getFriendInfo(qq);
+            return getOrPutAccount(qq, friendInfo.getAccountRemarkOrNickname());
+        } catch (Exception exception) {
+            return getOrPutAccount(qq, null);
+        }
     }
 
     @Override

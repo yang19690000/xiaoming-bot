@@ -7,7 +7,6 @@ import love.forte.simbot.api.sender.MsgSender;
 
 public class PrivateDispatcherUserImpl extends DispatcherUserImpl implements PrivateDispatcherUser {
     private PrivateMsg privateMsg;
-    private MsgSender msgSender;
 
     @Override public PrivateMsg getPrivateMsg() {
         return privateMsg;
@@ -18,18 +17,8 @@ public class PrivateDispatcherUserImpl extends DispatcherUserImpl implements Pri
     }
 
     @Override
-    public void setMsgSender(MsgSender msgSender) {
-        this.msgSender = msgSender;
-    }
-
-    @Override
     public AccountInfo getAccountInfo() {
         return privateMsg.getAccountInfo();
-    }
-
-    @Override
-    public MsgSender getMsgSender() {
-        return msgSender;
     }
 
     @Override
@@ -45,10 +34,5 @@ public class PrivateDispatcherUserImpl extends DispatcherUserImpl implements Pri
     @Override
     public String getName() {
         return getQQString();
-    }
-
-    @Override
-    protected void sendMessage(String message) {
-        sendPrivateMessage(message);
     }
 }

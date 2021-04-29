@@ -15,10 +15,6 @@ public class JsonFileSavedData extends FileSavedDataImpl {
     public void saveThrowsException() throws Exception {
         final File file = getFile();
         if (!file.exists() || file.isDirectory()) {
-            final File parentDirectory = file.getParentFile();
-            if (!parentDirectory.exists()) {
-                parentDirectory.mkdirs();
-            }
             file.createNewFile();
         }
         try (FileOutputStream fileOutputStream = new FileOutputStream(getFile())) {

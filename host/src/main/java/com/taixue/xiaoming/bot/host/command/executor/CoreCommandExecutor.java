@@ -1,9 +1,11 @@
 package com.taixue.xiaoming.bot.host.command.executor;
 
+import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
 import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
+import com.taixue.xiaoming.bot.api.config.BotAccountConfig;
 import com.taixue.xiaoming.bot.api.config.Config;
 import com.taixue.xiaoming.bot.api.exception.XiaomingRuntimeException;
 import com.taixue.xiaoming.bot.api.listener.interactor.Interactor;
@@ -117,12 +119,27 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.PLUGIN_REGEX)
     @RequirePermission("plugin.list")
-    public void onLoadedPluginsStatus(final XiaomingUser user) {
+    public void onLoadedPlugins(final XiaomingUser user) {
         if (user instanceof GroupXiaomingUser) {
-            user.sendMessage("插件详情已私发你啦，记得查收");
             ((GroupXiaomingUser) user).sendPrivateMessage(getLoadedPluginString());
         } else {
             user.sendMessage(getLoadedPluginString());
+        }
+    }
+
+    @Command(CommandWordUtil.PLUGIN_REGEX + " {plugin}")
+    @RequirePermission("plugin.look")
+    public void onLoadedPlugins(final XiaomingUser user,
+                                @CommandParameter("plugin") final String pluginName) {
+        final XiaomingPlugin plugin = getXiaomingBot().getPluginManager().getPlugin(pluginName);
+        if (Objects.isNull(plugin)) {
+            user.sendError("没有找到插件：{}", pluginName);
+        } else {
+            if (user instanceof GroupXiaomingUser) {
+                ((GroupXiaomingUser) user).sendPrivateMessage(getPluginMessage(plugin));
+            } else {
+                user.sendMessage(getPluginMessage(plugin));
+            }
         }
     }
 
@@ -141,7 +158,7 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.COMMAND_EXECUTOR_REGEX)
     @RequirePermission("commandexecutor.list")
-    public void onCommandExecutorStatus(final XiaomingUser user) {
+    public void onCommandExecutor(final XiaomingUser user) {
         if (user instanceof GroupXiaomingUser) {
             user.sendMessage("指令处理器详情已私发你啦，记得查收");
             ((GroupXiaomingUser) user).sendPrivateMessage(getCommandExecutorsString());
@@ -150,7 +167,7 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
         }
     }
 
-    @Command("(交互器|interactor)")
+    @Command(CommandWordUtil.INTERACTOR_REGEX)
     @RequirePermission("interactor.list")
     public void onInteractorStatus(final XiaomingUser user) {
         if (user instanceof GroupXiaomingUser) {
@@ -161,11 +178,9 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
         }
     }
 
-    @Command("调用")
-    @Command("call")
-    @Command("调用查询")
+    @Command(CommandWordUtil.CALL_REGEX)
     public void onCallCounter(final XiaomingUser user) {
-        user.sendMessage("调用次数：{}", getXiaomingBot().getConfig().getCallCounter());
+        user.sendMessage("小明至今的召唤次数：{}", getXiaomingBot().getCounter().getCallCounter());
     }
 
     @Command("(异常|exception)")
@@ -193,6 +208,7 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
             builder.append("你没有权限执行任何小明指令 {}").append(getXiaomingBot().getEmojiManager().get("sad"));
         } else {
             builder.append("你能可能有权限执行的所有小明指令有 ").append(runnableCoreCommands.size()).append(" 条：");
+            Collections.sort(runnableCoreCommands);
             for (String runnableCoreCommand : runnableCoreCommands) {
                 builder.append("\n").append(runnableCoreCommand);
             }

@@ -12,6 +12,7 @@ import com.taixue.xiaoming.bot.core.command.executor.CommandExecutorImpl;
 import com.taixue.xiaoming.bot.util.CommandWordUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -24,7 +25,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
         return CommandWordUtil.GROUP_REGEX;
     }
 
-    public String getGroupName(@NotNull final Group group) {
+    public String getGroupName(final Group group) {
         if (Objects.isNull(group.getAlias())) {
             return group.getCode() + "";
         } else {
@@ -32,10 +33,69 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
         }
     }
 
+    @Command(CommandWordUtil.GROUP_REGEX)
+    @RequirePermission("group.list")
+    public void onListGroups(final XiaomingUser user) {
+        final Map<String, Group> groups = groupManager.getGroups();
+        if (groups.isEmpty()) {
+
+        } else {
+            StringBuilder builder = new StringBuilder();
+            builder.append("小明的响应群有 ").append(groups.size()).append("个：");
+            for (Map.Entry<String, Group> entry : groups.entrySet()) {
+                builder.append("\n")
+                        .append(getGroupName(entry.getValue())).append("：").append(entry.getKey());
+            }
+            user.sendMessage(builder.toString());
+        }
+
+    }
+
+    @Command(CommandWordUtil.GROUP_REGEX + " {group}")
+    @RequirePermission("group.look")
+    public void onLookGroup(final XiaomingUser user,
+                            @CommandParameter("group") String groupString) {
+        Group group;
+        if (groupString.matches("\\d+")) {
+            group = groupManager.forGroup(Long.parseLong(groupString));
+        } else {
+            group = groupManager.forName(groupString);
+        }
+
+        if (Objects.isNull(group)) {
+            user.sendMessage("这个群并不是小明的响应群哦");
+            return;
+        } else {
+            user.sendMessage("群备注：{}\n" +
+                            "群号：{}\n" +
+                            "群标记：{}\n" +
+                            "屏蔽的插件：{}",
+                    Objects.nonNull(group.getAlias()) ? group.getAlias() : "（无）",
+                    group.getCode(),
+                    group.getTags(),
+                    group.getBlockPlugins());
+        }
+    }
+
+    @Command(CommandWordUtil.THIS_REGEX + CommandWordUtil.GROUP_REGEX)
+    @RequirePermission("group.look")
+    public void onLookThisGroup(final GroupXiaomingUser user) {
+        Group group = groupManager.forGroup(user.getGroup());
+
+        user.sendMessage("本群备注：{}\n" +
+                        "群号：{}\n" +
+                        "群标记：{}\n" +
+                        "屏蔽的插件：{}",
+                Objects.nonNull(group.getAlias()) ? group.getAlias() : "（无）",
+                group.getCode(),
+                group.getTags(),
+                group.getBlockPlugins());
+    }
+
     @Command(CommandWordUtil.GROUP_REGEX + " {key} " + TAG_REGEX)
     @RequirePermission("group.tag.list")
-    public void onListGroupTags(@NotNull final XiaomingUser user,
-                                @NotNull @CommandParameter("key") String key) {
+    public void onListGroupTags(final XiaomingUser user,
+                                @CommandParameter("key") String key) {
         final Group group = groupManager.getGroups().get(key);
         if (Objects.isNull(group)) {
             user.sendError("找不到响应群：{}", key);
@@ -46,8 +106,8 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.GROUP_REGEX + TAG_REGEX)
     @RequirePermission("group.tag.list")
-    public void onListGroupTags(@NotNull final GroupXiaomingUser user,
-                                @NotNull @CommandParameter("key") String key) {
+    public void onListGroupTags(final GroupXiaomingUser user,
+                                @CommandParameter("key") String key) {
         final Group group = groupManager.forGroup(user.getGroup());
         if (Objects.isNull(group)) {
             user.sendError("意外：本群不是小明的响应群");
@@ -62,9 +122,9 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.GROUP_REGEX + " {key} " + TAG_REGEX + " " + CommandWordUtil.NEW_REGEX + " {tag}")
     @RequirePermission("group.tag.add")
-    public void onAddGroupTag(@NotNull final XiaomingUser user,
-                              @NotNull @CommandParameter("key") String key,
-                              @NotNull @CommandParameter("tag") String tag) {
+    public void onAddGroupTag(final XiaomingUser user,
+                              @CommandParameter("key") String key,
+                              @CommandParameter("tag") String tag) {
         final Group group = groupManager.getGroups().get(key);
         if (Objects.isNull(group)) {
             user.sendError("找不到响应群：{}", key);
@@ -82,8 +142,8 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.GROUP_REGEX + TAG_REGEX + " " + CommandWordUtil.NEW_REGEX + " {tag}")
     @RequirePermission("group.tag.add")
-    public void onAddThisGroupTag(@NotNull final GroupXiaomingUser user,
-                                  @NotNull @CommandParameter("tag") String tag) {
+    public void onAddThisGroupTag(final GroupXiaomingUser user,
+                                  @CommandParameter("tag") String tag) {
         final Group group = groupManager.forGroup(user.getGroup());
         if (Objects.isNull(group)) {
             user.sendError("意外：本群不是小明的响应群");
@@ -101,8 +161,8 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.GROUP_REGEX + " " + CommandWordUtil.BLOCK_REGEX + " {plugin}")
     @RequirePermission("group.plugin.block")
-    public void onBlockPlugin(@NotNull final GroupXiaomingUser user,
-                              @NotNull @CommandParameter("plugin") final String plugin) {
+    public void onBlockPlugin(final GroupXiaomingUser user,
+                              @CommandParameter("plugin") final String plugin) {
         Group group = groupManager.forGroup(user.getGroup());
         if (group.isUnablePlugin(plugin)) {
             user.sendError("本群已经屏蔽了插件{}", plugin);
@@ -119,8 +179,8 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
 
     @Command(CommandWordUtil.GROUP_REGEX + " " + CommandWordUtil.UNBLOCK_REGEX + " {plugin}")
     @RequirePermission("group.plugin.unblock")
-    public void onUnblockPlugin(@NotNull final GroupXiaomingUser user,
-                                @NotNull @CommandParameter("plugin") final String plugin) {
+    public void onUnblockPlugin(final GroupXiaomingUser user,
+                                @CommandParameter("plugin") final String plugin) {
         Group group = groupManager.forGroup(user.getGroup());
         if (group.isUnablePlugin(plugin)) {
             group.getBlockPlugins().remove(plugin);

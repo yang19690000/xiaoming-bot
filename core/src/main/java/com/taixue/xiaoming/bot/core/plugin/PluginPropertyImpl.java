@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class PluginPropertyImpl extends HashMap<String, Object> implements PluginProperty {
-    private File pluginFile;
-    private XiaomingPlugin plugin;
+    private transient File pluginFile;
+    private transient XiaomingPlugin plugin;
 
     @Override
     public XiaomingPlugin getPlugin() {

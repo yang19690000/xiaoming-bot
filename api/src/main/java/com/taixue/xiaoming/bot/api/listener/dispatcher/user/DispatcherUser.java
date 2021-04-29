@@ -9,10 +9,9 @@ public interface DispatcherUser extends QQXiaomingUser {
 
     void setInteractor(Interactor interactor);
 
+    @Override
     String getMessage();
 
     @Override
     boolean hasPermission(String node);
-
-    void setMsgSender(MsgSender msgSender);
 }

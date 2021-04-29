@@ -9,7 +9,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.taixue.xiaoming.bot</groupId>
     <artifactId>xiaoming-bot-host</artifactId>
 
     <dependencies>
@@ -42,7 +41,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.3.4.RELEASE</version>
                 <configuration>
-                    <mainClass>com.taixue.xiaoming.bot.host.XiaomingStarter</mainClass>
+                    <mainClass>com.taixue.xiaoming.bot.host.XiaomingHost</mainClass>
                 </configuration>
                 <executions>
                     <execution>

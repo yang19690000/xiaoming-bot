@@ -60,7 +60,7 @@ public abstract class CallLimiterImpl<Key, Value extends CallRecord> implements 
     public boolean isTooFastSoUncallable(@NotNull final Key key) {
         final Value userCallRecord = getCallRecords(key);
         if (Objects.isNull(userCallRecord)) {
-            return true;
+            return false;
         } else {
             return config.getCoolDown() > 0 && userCallRecord.isTooFastSoUncallable(config);
         }
@@ -70,9 +70,9 @@ public abstract class CallLimiterImpl<Key, Value extends CallRecord> implements 
     public boolean isTooManySoUncallable(@NotNull final Key key) {
         final Value userCallRecord = getCallRecords(key);
         if (Objects.isNull(userCallRecord)) {
-            return true;
+            return false;
         } else {
-            return config.getMaxCallNumber() > 0 && userCallRecord.isTooManySoUncallable(config);
+            return config.getTop() > 0 && userCallRecord.isTooManySoUncallable(config);
         }
     }
 
@@ -84,7 +84,7 @@ public abstract class CallLimiterImpl<Key, Value extends CallRecord> implements 
     @Override
     public boolean shouldNotice(@NotNull Key key) {
         final Value records = getCallRecords(key);
-        return Objects.nonNull(records) ? records.getLastNoticeTime() + config.getDeltaNoticeTime() < System.currentTimeMillis() : null;
+        return Objects.nonNull(records) && records.getLastNoticeTime() + config.getDeltaNoticeTime() < System.currentTimeMillis();
     }
 
     @Override

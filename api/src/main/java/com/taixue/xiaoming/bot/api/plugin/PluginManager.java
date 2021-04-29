@@ -17,7 +17,7 @@ public interface PluginManager extends XiaomingObject {
     /**
      * 加载一个插件（无参数校验，确认其无问题）
      */
-    boolean loadPlugin(XiaomingUser sender,
+    XiaomingPlugin loadPlugin(XiaomingUser sender,
                        PluginProperty property);
 
     void loadAllPlugins(XiaomingUser user);
@@ -34,6 +34,9 @@ public interface PluginManager extends XiaomingObject {
 
     boolean reloadPlugin(XiaomingUser sender,
                          String pluginName);
+
+    boolean reloadPlugin(XiaomingUser sender,
+                         XiaomingPlugin plugin);
 
     boolean reloadPlugin(XiaomingUser user,
                          PluginProperty property);

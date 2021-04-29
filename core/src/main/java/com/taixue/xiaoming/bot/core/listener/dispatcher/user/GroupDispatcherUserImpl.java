@@ -11,7 +11,6 @@ import love.forte.simbot.api.sender.MsgSender;
  * @author Chuanwise
  */
 public class GroupDispatcherUserImpl extends DispatcherUserImpl implements GroupDispatcherUser {
-    private MsgSender msgSender;
     private GroupMsg groupMsg;
 
     @Override
@@ -19,18 +18,9 @@ public class GroupDispatcherUserImpl extends DispatcherUserImpl implements Group
         return groupMsg.getAccountInfo();
     }
 
-    @Override public void setGroupMsg(GroupMsg groupMsg) {
+    @Override
+    public void setGroupMsg(GroupMsg groupMsg) {
         this.groupMsg = groupMsg;
-    }
-
-    @Override
-    public void setMsgSender(MsgSender msgSender) {
-        this.msgSender = msgSender;
-    }
-
-    @Override
-    public MsgSender getMsgSender() {
-        return msgSender;
     }
 
     @Override
@@ -54,11 +44,7 @@ public class GroupDispatcherUserImpl extends DispatcherUserImpl implements Group
     }
 
     @Override
-    protected void sendMessage(String message) {
-        sendGroupMessage(CatCodeUtil.getInstance().getStringTemplate().at(getQQString()) + " " + message);
-    }
-
-    @Override public GroupMsg getGroupMsg() {
+    public GroupMsg getGroupMsg() {
         return groupMsg;
     }
 }

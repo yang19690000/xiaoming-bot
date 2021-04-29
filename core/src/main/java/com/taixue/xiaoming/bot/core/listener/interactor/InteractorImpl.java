@@ -101,7 +101,6 @@ public abstract class InteractorImpl
         if (!islocater.containsKey(user.getQQ())) {
             final GroupInteractorUser interactorUser = new GroupInteractorUserImpl();
             interactorUser.setGroupMsg(user.getGroupMsg());
-            interactorUser.setMsgSender(user.getMsgSender());
             islocater.put(user.getQQ(), interactorUser);
             onGroupUserIn(interactorUser);
         } else {
@@ -126,7 +125,6 @@ public abstract class InteractorImpl
         if (!islocater.containsKey(user.getQQ())) {
             final PrivateInteractorUser interactorUser = new PrivateInteractorUserImpl();
             interactorUser.setPrivateMsg(user.getPrivateMsg());
-            interactorUser.setMsgSender(user.getMsgSender());
             islocater.put(user.getQQ(), interactorUser);
             onPrivateUserIn(interactorUser);
         } else {
@@ -174,7 +172,6 @@ public abstract class InteractorImpl
                     putUser(user.getQQ(), interactorUser);
                 }
                 interactorUser.setMessageWaiter(messageWaiter);
-                interactorUser.setMsgSender(user.getMsgSender());
                 // interactorUser.setAccountInfo(user.getAccountInfo());
                 // TODO: 2021/4/28 Check if it cause exception
             } else {

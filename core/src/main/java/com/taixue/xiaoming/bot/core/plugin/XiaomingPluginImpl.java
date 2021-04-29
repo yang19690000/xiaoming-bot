@@ -32,7 +32,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
     private File dataFolder;
     private File configFile;
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final File getDataFolder() {
         if (Objects.isNull(dataFolder)) {
             dataFolder = new File(PathUtil.PLUGIN_DIR, getName());
@@ -40,41 +41,49 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
         return dataFolder;
     }
 
-    @Override public final void setClassLoader(ClassLoader classLoader) {
+    @Override
+    public final void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final ClassLoader getClassLoader() {
         return classLoader;
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final PluginProperty getProperty() {
         return property;
     }
 
-    @Override public final void setProperty(PluginProperty property) {
+    @Override
+    public final void setProperty(PluginProperty property) {
         this.property = property;
         property.setPlugin(this);
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final String getName() {
         return property.getName();
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final String getVersion() {
         return property.getVersion();
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final String getCompleteName() {
         return getName() + "（" + getVersion() + "）";
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public final File getConfigFile() {
         if (Objects.isNull(configFile)) {
             configFile = new File(getDataFolder(), "config.json");
@@ -82,7 +91,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
         return configFile;
     }
 
-    @Override@Nullable
+    @Override
+    @Nullable
     public <T extends FileSavedData> T loadConfigAs(@NotNull final Class<T> clazz)
             throws IOException {
         return getXiaomingBot().getFileSavedDataFactory().forFileThrowsException(getConfigFile(), clazz);
@@ -91,7 +101,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
     /**
      * 以图形式加载配置文件
      */
-    @Override@Nullable
+    @Override
+    @Nullable
     public Map loadConfigAsMap() throws IOException {
         Map result = null;
         try (FileInputStream inputStream = new FileInputStream(getConfigFile())) {
@@ -103,7 +114,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
     /**
      * 将资源文件复制到指定的某处
      */
-    @Override public boolean copyResourceTo(@NotNull final String path,
+    @Override
+    public boolean copyResourceTo(@NotNull final String path,
                                   @NotNull final File to)
             throws IOException {
         final InputStream inputStream = getClassLoader().getResourceAsStream(path);
@@ -118,7 +130,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
     /**
      * 如果插件文件夹中不存在配置文件，将资源文件 config.json 复制到该处
      */
-    @Override public boolean copyDefaultConfig()
+    @Override
+    public boolean copyDefaultConfig()
             throws IOException {
         final File configFile = getConfigFile();
         if (configFile.isFile()) {
@@ -130,7 +143,8 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
 
     private Map<String, HookHolder> hookHolders = new HashMap<>();
 
-    @Override@Nullable
+    @Override
+    @Nullable
     public HookHolder getHookHolder(String otherPluginName) {
         return hookHolders.get(otherPluginName);
     }
@@ -142,13 +156,17 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
     /**
      * 被别的插件主动脱钩时的操作
      */
-    @Override public void onUnhook(XiaomingPlugin plugin, HookHolder holder) {}
+    @Override
+    public void onUnhook(XiaomingPlugin plugin, HookHolder holder) {
+    }
 
-    @Override public boolean isHookingWith(String pluginName) {
+    @Override
+    public boolean isHookingWith(String pluginName) {
         return hookHolders.containsKey(pluginName);
     }
 
-    @Override public boolean isHookingWith(XiaomingPlugin plugin) {
+    @Override
+    public boolean isHookingWith(XiaomingPlugin plugin) {
         return isHookingWith(plugin.getName());
     }
 
@@ -156,18 +174,19 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
      * 主动与其他插件脱钩时的操作
      * @param plugin
      */
-    @Override public final boolean unhook(XiaomingPlugin plugin) throws Exception {
+    @Override
+    public final boolean unhook(XiaomingPlugin plugin) throws Exception {
         HookHolder hookHolder = getHookHolder(plugin.getName());
         if (Objects.nonNull(hookHolder)) {
             unhook(hookHolder);
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    @Override public final boolean unhook(HookHolder hookHolder) throws Exception {
+    @Override
+    public final boolean unhook(HookHolder hookHolder) throws Exception {
         XiaomingPlugin otherPlugin = hookHolder.getOtherPlugin(this);
         getLogger().info("主动和{}解钩", otherPlugin.getCompleteName());
         otherPlugin.onUnhook(this, hookHolder);
@@ -176,17 +195,18 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
         return true;
     }
 
-    @Override public final boolean unhook(String pluginName) throws Exception {
+    @Override
+    public final boolean unhook(String pluginName) throws Exception {
         HookHolder hook = getHookHolder(pluginName);
         if (Objects.nonNull(hook)) {
             return unhook(hook.getSponsor());
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    @Override public final boolean unHookAll() throws Exception {
+    @Override
+    public final boolean unHookAll() throws Exception {
         for (Map.Entry<String, HookHolder> entry : hookHolders.entrySet()) {
             if (!unhook(entry.getValue())) {
                 return false;
@@ -200,12 +220,15 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
      * @param otherPlugin
      * @param holder
      */
-    @Override public void onHook(XiaomingPlugin otherPlugin, HookHolder holder) {}
+    @Override
+    public void onHook(XiaomingPlugin otherPlugin, HookHolder holder) {
+    }
 
     /**
      * 主动和其他插件挂钩
      */
-    @Override@Nullable
+    @Override
+    @Nullable
     public <T extends HookHolder> T hook(XiaomingPlugin otherPlugin, Class<T> holderClass)
             throws Exception {
         if (!isHookingWith(otherPlugin.getName())) {
@@ -214,20 +237,19 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
             otherPlugin.getHookHolders().put(otherPlugin.getName(), hookHolder);
             otherPlugin.onHook(this, hookHolder);
             return hookHolder;
-        }
-        else {
+        } else {
             return null;
         }
     }
 
-    @Override@Nullable
+    @Override
+    @Nullable
     public <T extends HookHolder> T hook(String pluginName, Class<T> holderClass)
             throws Exception {
         XiaomingPlugin plugin = getXiaomingBot().getPluginManager().getPlugin(pluginName);
         if (Objects.nonNull(plugin)) {
             return hook(plugin, holderClass);
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -237,11 +259,16 @@ public class XiaomingPluginImpl extends HostObjectImpl implements XiaomingPlugin
      * @param user 交互的成员
      * @return 是否需要尝试下一个交互器
      */
-    @Override public boolean onMessage(DispatcherUser user) {
+    @Override
+    public boolean onMessage(DispatcherUser user) {
         return false;
     }
 
-    @Override public void onEnable() {}
+    @Override
+    public void onEnable() {
+    }
 
-    @Override public void onDisable() {}
+    @Override
+    public void onDisable() {
+    }
 }

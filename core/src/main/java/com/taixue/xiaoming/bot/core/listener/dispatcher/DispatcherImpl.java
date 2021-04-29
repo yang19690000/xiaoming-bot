@@ -203,37 +203,33 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
         return false;
     }
 
+    public void reportToLog(final String message) {
+        for (Group log : getXiaomingBot().getGroupManager().forTag("log")) {
+            getXiaomingBot().getMsgSender().SENDER.sendGroupMsg(log.getCode(), message);
+        }
+    }
+
     @Override
     public void reportExceptionToLog(@NotNull final DispatcherUser user,
                                      @NotNull final Exception exception,
                                      @NotNull final XiaomingPlugin plugin,
                                      @NotNull final MsgSender msgSender) {
         StringBuilder builder = new StringBuilder()
-                .append("【出现异常】").append("\n");
+                .append("【异常】").append("\n");
 
-        if (user instanceof GroupDispatcherUser) {
-            builder.append("插件 ").append(plugin.getCompleteName()).append(" 响应群聊消息时出现异常。").append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("发生群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-        } else {
-            builder.append("插件 ").append(plugin.getCompleteName()).append(" 响应私聊消息时出现异常。").append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+        builder.append("插件 ").append(plugin.getCompleteName()).append(" 出现异常。").append("\n")
+                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
+                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n");
+
+        if (user instanceof GroupXiaomingUser) {
+            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
         }
-        final String logString = builder.toString();
-        /*
-        for (Group log : getXiaomingBot().getGroupManager().forTag("log")) {
-            msgSender.SENDER.sendGroupMsg(log.getCode(), logString);
-        }
-         */
-        msgSender.SENDER.sendPrivateMsg(msgSender.GETTER.getBotInfo(), logString);
+
+        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
+                .append("输入：").append(user.getMessage()).append("\n")
+                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+
+        reportToLog(builder.toString());
         exception.printStackTrace();
     }
 
@@ -243,33 +239,21 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                                      @NotNull final Interactor interactor,
                                      @NotNull final MsgSender msgSender) {
         StringBuilder builder = new StringBuilder()
-                .append("【出现异常】").append("\n");
+                .append("【异常】").append("\n");
 
-        if (user instanceof GroupDispatcherUser) {
-            builder.append("交互器 ").append(interactor.getClass().getSimpleName()).append(" 响应群聊消息时出现异常。").append("\n")
-                    .append("注册方：").append(Objects.isNull(interactor.getPlugin()) ? "内核" : interactor.getPlugin().getCompleteName()).append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("发生群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-        } else {
-            builder.append("交互器 ").append(interactor.getClass().getSimpleName()).append(" 响应私聊消息时出现异常。").append("\n")
-                    .append("注册方：").append(Objects.isNull(interactor.getPlugin()) ? "内核" : interactor.getPlugin().getCompleteName()).append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+        builder.append("交互器 ").append(interactor.getClass().getName()).append(" 出现异常。").append("\n")
+                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
+                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n");
+
+        if (user instanceof GroupXiaomingUser) {
+            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
         }
-        final String logString = builder.toString();
-        /*
-        for (Group log : getXiaomingBot().getGroupManager().forTag("log")) {
-            msgSender.SENDER.sendGroupMsg(log.getCode(), logString);
-        }
-         */
-        msgSender.SENDER.sendPrivateMsg(msgSender.GETTER.getBotInfo(), logString);
+
+        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
+                .append("输入：").append(user.getMessage()).append("\n")
+                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+
+        reportToLog(builder.toString());
         exception.printStackTrace();
     }
 
@@ -279,33 +263,22 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                                      @NotNull final CommandExecutor executor,
                                      @NotNull final MsgSender msgSender) {
         StringBuilder builder = new StringBuilder()
-                .append("【出现异常】").append("\n");
+                .append("【异常】").append("\n");
 
-        if (user instanceof GroupDispatcherUser) {
-            builder.append("指令处理器 ").append(executor.getClass().getSimpleName()).append(" 响应群聊消息时出现异常。").append("\n")
-                    .append("注册方：").append(Objects.isNull(executor.getPlugin()) ? "内核" : executor.getPlugin().getCompleteName()).append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("发生群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-        } else {
-            builder.append("指令处理器 ").append(executor.getClass().getSimpleName()).append(" 响应私聊消息时出现异常。").append("\n")
-                    .append("注册方：").append(Objects.isNull(executor.getPlugin()) ? "内核" : executor.getPlugin().getCompleteName()).append("\n")
-                    .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                    .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                    .append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                    .append("输入：").append(user.getMessage()).append("\n")
-                    .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+        builder.append("指令处理器 ").append(executor.getClass().getName()).append(" 出现异常。").append("\n")
+                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
+                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
+                .append("注册形式：").append(Objects.isNull(executor.getPlugin()) ? "内核" : executor.getPlugin().getName()).append("\n");
+
+        if (user instanceof GroupXiaomingUser) {
+            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
         }
-        final String logString = builder.toString();
-        /*
-        for (Group log : getXiaomingBot().getGroupManager().forTag("log")) {
-            msgSender.SENDER.sendGroupMsg(log.getCode(), logString);
-        }
-         */
-        msgSender.SENDER.sendPrivateMsg(msgSender.GETTER.getBotInfo(), logString);
+
+        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
+                .append("输入：").append(user.getMessage()).append("\n")
+                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
+
+        reportToLog(builder.toString());
         exception.printStackTrace();
     }
 

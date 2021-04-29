@@ -14,4 +14,10 @@ public interface SizedRecorder<DataType> {
 
     @NotNull
     DataType[] list();
+
+    int size();
+
+    default boolean empty() {
+        return size() == 0;
+    }
 }

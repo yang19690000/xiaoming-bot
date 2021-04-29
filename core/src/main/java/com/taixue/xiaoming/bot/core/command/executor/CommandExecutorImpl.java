@@ -27,7 +27,8 @@ import java.util.regex.Matcher;
 public abstract class CommandExecutorImpl extends PluginObjectImpl implements CommandExecutor {
     private Set<CommandExecutorMethod> executorMethods = new HashSet<>();
 
-    @Override public void reloadSubcommandExecutor() {
+    @Override
+    public void reloadSubcommandExecutor() {
         executorMethods.clear();
         final String helpPrefix = getHelpPrefix();
         if (!helpPrefix.isEmpty()) {
@@ -60,7 +61,8 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
         }
     }
 
-    @Override public boolean verifyPermissionAndReport(@NotNull final XiaomingUser sender,
+    @Override
+    public boolean verifyPermissionAndReport(@NotNull final XiaomingUser sender,
                                              @NotNull final String node) {
         if (!sender.hasPermission(node)) {
             tellLackPermission(sender, node);
@@ -70,17 +72,20 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
         }
     }
 
-    @Override public void tellLackPermission(@NotNull final XiaomingUser sender,
+    @Override
+    public void tellLackPermission(@NotNull final XiaomingUser sender,
                                    @NotNull final String node) {
         sender.sendWarning("小明不能帮你做这件事哦，因为你缺少权限：{}", node);
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public String getCommandPrefix() {
         return "#";
     }
 
-    @Override public boolean onCommand(@NotNull final DispatcherUser user) throws Exception {
+    @Override
+    public boolean onCommand(@NotNull final DispatcherUser user) throws Exception {
         String input = user.getMessage().trim();
         final String commandPrefix = getCommandPrefix();
         if (input.startsWith(commandPrefix) && input.length() > commandPrefix.length()) {
@@ -175,12 +180,14 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
         return false;
     }
 
-    @Override@Nullable
+    @Override
+    @Nullable
     public Object onParameter(@NotNull Parameter parameter) {
         return null;
     }
 
-    @Override@Nullable
+    @Override
+    @Nullable
     public Object onParameter(@NotNull final DispatcherUser user,
                               @NotNull final Class<?> clazz,
                               @NotNull final String parameterName,
@@ -198,12 +205,14 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
         return null;
     }
 
-    @Override@NotNull
+    @Override
+    @NotNull
     public String getHelpPrefix() {
         return "";
     }
 
-    @Override public Set<String> getUsageStrings(@NotNull final XiaomingUser user) {
+    @Override
+    public Set<String> getUsageStrings(@NotNull final XiaomingUser user) {
         Set<String> usages = new HashSet<>();
         for (CommandExecutorMethod executorMethod : executorMethods) {
             if (user.hasPermissions(executorMethod.getRequiredPermission())) {
@@ -215,15 +224,18 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
         return usages;
     }
 
-    @Override public void onHelp(@NotNull final XiaomingUser user) {
+    @Override
+    public void onHelp(@NotNull final XiaomingUser user) {
         StringBuilder builder = new StringBuilder();
 
         final Set<String> usageStrings = getUsageStrings(user);
         if (usageStrings.isEmpty()) {
             builder.append("你没有权限执行该组任何一个指令");
         } else {
-            builder.append("该组指令中你可能有权执行的有如下 " + usageStrings.size() + " 条：\n");
-            for (String s : usageStrings) {
+            final String[] strings = usageStrings.toArray(new String[0]);
+            Arrays.sort(strings);
+            builder.append("该组指令中你可能有权执行的有如下 " + usageStrings.size() + " 条：");
+            for (String s : strings) {
                 builder.append("\n").append(s);
             }
         }

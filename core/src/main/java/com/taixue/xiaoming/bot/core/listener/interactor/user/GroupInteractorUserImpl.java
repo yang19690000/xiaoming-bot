@@ -7,26 +7,16 @@ import love.forte.simbot.api.message.events.GroupMsg;
 import love.forte.simbot.api.sender.MsgSender;
 
 public class GroupInteractorUserImpl extends InteractorUserImpl implements GroupInteractorUser {
-    private MsgSender msgSender;
     private GroupMsg groupMsg;
 
     @Override
-    public void setMsgSender(MsgSender msgSender) {
-        this.msgSender = msgSender;
-    }
-
-    @Override public void setGroupMsg(GroupMsg groupMsg) {
+    public void setGroupMsg(GroupMsg groupMsg) {
         this.groupMsg = groupMsg;
     }
 
     @Override
     public AccountInfo getAccountInfo() {
         return groupMsg.getAccountInfo();
-    }
-
-    @Override
-    public MsgSender getMsgSender() {
-        return msgSender;
     }
 
     @Override
@@ -40,11 +30,6 @@ public class GroupInteractorUserImpl extends InteractorUserImpl implements Group
     }
 
     @Override
-    protected void sendMessage(String message) {
-        sendGroupMessage(message);
-    }
-
-    @Override
     public boolean hasPermission(String node) {
         return getXiaomingBot().getPermissionManager().userHasPermission(getQQ(), node);
     }
@@ -54,7 +39,8 @@ public class GroupInteractorUserImpl extends InteractorUserImpl implements Group
         return getQQString();
     }
 
-    @Override public GroupMsg getGroupMsg() {
+    @Override
+    public GroupMsg getGroupMsg() {
         return groupMsg;
     }
 }

@@ -53,7 +53,7 @@ public class AccountImpl extends JsonFileSavedData implements Account {
                              final Class<T> clazz) {
         final Object object = properties.get(key);
         if (Objects.nonNull(object)) {
-            if (object.getClass().equals(clazz)) {
+            if (clazz.isAssignableFrom(object.getClass())) {
                 return ((T) object);
             } else {
                 final T t = JsonSerializerUtil.getInstance().convert(object, clazz);

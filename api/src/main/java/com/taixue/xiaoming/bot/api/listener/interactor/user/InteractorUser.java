@@ -12,11 +12,10 @@ public interface InteractorUser extends QQXiaomingUser {
 
     void shouldExit();
 
+    @Override
     String getMessage();
 
     boolean isFirstInteract();
 
     void setFirstInteract(boolean firstInteract);
-
-    void setMsgSender(MsgSender msgSender);
 }

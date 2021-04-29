@@ -17,8 +17,4 @@ public abstract class DispatcherUserImpl extends QQXiaomingUserImpl implements D
     public void setInteractor(Interactor interactor) {
         this.interactor = interactor;
     }
-
-    @Override
-    protected abstract void sendMessage(final String message);
-
 }
