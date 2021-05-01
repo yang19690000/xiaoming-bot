@@ -49,33 +49,16 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
                 try {
                     executorMethods.add(new CommandExecutorMethodImpl(method));
                 } catch (Exception exception) {
-                    getLogger().error("方法 {} 不能作为子指令函数，因为解析时出现异常：{}", method, exception);
+                    getLogger().error("方法 {} 不能作为子指令处理方法，因为解析时出现异常：{}", method, exception);
                     exception.printStackTrace();
                 }
             }
         }
         if (executorMethods.isEmpty()) {
-            getLogger().warn("没有从加载任何子指令函数");
+            getLogger().warn("没有从加载任何子指令处理方法");
         } else {
-            getLogger().info("成功加载了 {} 个子指令函数", executorMethods.size());
+            getLogger().info("成功加载了 {} 个子指令处理方法", executorMethods.size());
         }
-    }
-
-    @Override
-    public boolean verifyPermissionAndReport(@NotNull final XiaomingUser sender,
-                                             @NotNull final String node) {
-        if (!sender.hasPermission(node)) {
-            tellLackPermission(sender, node);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @Override
-    public void tellLackPermission(@NotNull final XiaomingUser sender,
-                                   @NotNull final String node) {
-        sender.sendWarning("小明不能帮你做这件事哦，因为你缺少权限：{}", node);
     }
 
     @Override
@@ -114,15 +97,14 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
 
             // 验证是否具有权限
             for (RequirePermission requiredPermission : method.getAnnotationsByType(RequirePermission.class)) {
-                if (!user.hasPermission(requiredPermission.value())) {
-                    tellLackPermission(user, requiredPermission.value());
+                if (!user.checkPermissionAndReport(requiredPermission.value())) {
                     return true;
                 }
             }
 
             List<Object> arguments = new ArrayList<>();
 
-            // 填充函数参数
+            // 填充处理方法参数
             for (Parameter parameter : method.getParameters()) {
                 final Class<?> type = parameter.getType();
                 // 如果是带有注解的
@@ -172,7 +154,6 @@ public abstract class CommandExecutorImpl extends PluginObjectImpl implements Co
             }
 
             if (arguments.size() == method.getParameterCount()) {
-                getLogger().info("{} 执行指令：{}", user.getName(), getCommandPrefix() + input);
                 method.invoke(this, arguments.toArray(new Object[0]));
                 return true;
             }

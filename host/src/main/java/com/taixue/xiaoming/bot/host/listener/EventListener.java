@@ -7,11 +7,9 @@ import com.taixue.xiaoming.bot.core.base.HostObjectImpl;
 import com.taixue.xiaoming.bot.util.TimeUtil;
 import love.forte.common.ioc.annotation.Beans;
 import love.forte.simbot.annotation.OnFriendAddRequest;
-import love.forte.simbot.annotation.OnGroupAddRequest;
 import love.forte.simbot.annotation.OnGroupMute;
 import love.forte.simbot.api.message.containers.*;
 import love.forte.simbot.api.message.events.FriendAddRequest;
-import love.forte.simbot.api.message.events.GroupAddRequest;
 import love.forte.simbot.api.message.events.GroupMute;
 import love.forte.simbot.api.sender.MsgSender;
 
@@ -51,11 +49,12 @@ public class EventListener extends HostObjectImpl {
                         "解禁用户 " + beOperatorInfo.getBeOperatorNicknameAndRemark() +
                                 "（" + beOperatorInfo.getBeOperatorCode() + "）"));
             }
-            operatorAccount.save();
-            beOperatorAccount.save();
+            operatorAccount.readySave();
+            beOperatorAccount.readySave();
         }
     }
 
+    /*
     @OnGroupAddRequest
     public void onGroupAddRequest(GroupAddRequest groupAddRequest, MsgSender msgSender) {
         System.out.println(groupAddRequest);
@@ -68,7 +67,18 @@ public class EventListener extends HostObjectImpl {
         } else {
             getLogger().info("小明所在的群聊 {} 中加入了新的成员：{}", groupInfo.getGroupCode(), accountInfo.getAccountCodeNumber());
         }
+
+        msgSender.SENDER.sendGroupMsg(groupAddRequest.getGroupInfo(), "新的加群申请：" + groupAddRequest.toString());
+
+        // msgSender.SETTER.acceptGroupAddRequest(groupAddRequest.getFlag());
     }
+
+    @OnPrivate
+    public void onPrivate(PrivateMsg privateMsg, MsgSender msgSender) {
+        System.out.println(privateMsg);
+    }
+
+     */
 
     @OnFriendAddRequest
     public void onFriendAddRequest(FriendAddRequest friendAddRequest, MsgSender msgSender) {

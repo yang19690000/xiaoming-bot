@@ -17,7 +17,6 @@ import com.taixue.xiaoming.bot.core.listener.interactor.user.MessageWaiterImpl;
 import com.taixue.xiaoming.bot.core.listener.interactor.user.PrivateInteractorUserImpl;
 import com.taixue.xiaoming.bot.util.TimeUtil;
 import com.taixue.xiaoming.bot.util.NoParameterMethod;
-import kotlinx.coroutines.TimeoutCancellationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,11 +47,14 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
         interactorMethodDetails.clear();
         final Method[] methods = getClass().getMethods();
         for (Method method : methods) {
-            if (!method.isAnnotationPresent(InteractMethod.class)) {
-                continue;
+            if (method.getAnnotationsByType(InteractMethod.class).length != 0) {
+                interactorMethodDetails.add(new InteractorMethodDetailImpl(method));
             }
-            InteractorMethodDetail detail = new InteractorMethodDetailImpl(method);
-            interactorMethodDetails.add(detail);
+        }
+        if (interactorMethodDetails.isEmpty()) {
+            getLogger().warn("没有从加载任何子交互方法");
+        } else {
+            getLogger().info("成功加载了 {} 个子交互方法", interactorMethodDetails.size());
         }
     }
 
@@ -67,90 +69,18 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
      */
     @Override
     public final void setWillExit(final long qq) {
-        setWillExit(getUser(qq));
-    }
-
-    @Override
-    public final void setWillExit(@NotNull final InteractorUser user) {
-        user.shouldExit();
+        final InteractorUser user = getUser(qq);
+        setWillExit(user);
     }
 
     @Override
     public final boolean isWillExit(long qq) {
         final InteractorUser user = getUser(qq);
-        return Objects.nonNull(user) && user.isExit();
+        return Objects.isNull(user) || user.isExit();
     }
 
     @Override
-    public final boolean isWillExit(@NotNull final InteractorUser user) {
-        return isWillExit(user.getQQ());
-    }
-
-    /**
-     * 用户初次使用交互器的方法（自动注册）
-     * @param user
-     */
-    @Override
-    public final void onUserIn(@NotNull final DispatcherUser user) {
-        if (user instanceof GroupDispatcherUser) {
-            onGroupUserIn(((GroupDispatcherUser) user));
-        } else if (user instanceof PrivateDispatcherUser) {
-            onPrivateUserIn(((PrivateDispatcherUser) user));
-        } else {
-            throw new IllegalArgumentException("dispatcher user must be instance of GroupDispatcherUser or PrivateDispatcherUser");
-        }
-    }
-
-    /**
-     * 群聊交互用户初次与本交互器交互时的操作
-     * @param user 当前的群聊交互成员
-     */
-    @Override
-    public final void onGroupUserIn(@NotNull final GroupDispatcherUser user) {
-        if (!islocater.containsKey(user.getQQ())) {
-            final GroupInteractorUser interactorUser = new GroupInteractorUserImpl();
-            interactorUser.setGroupMsg(user.getGroupMsg());
-            islocater.put(user.getQQ(), interactorUser);
-            onGroupUserIn(interactorUser);
-        } else {
-            throw new IllegalArgumentException("group dispatcher user " + user.getQQString() + " already be initialized!");
-        }
-    }
-
-    /**
-     * 群聊交互用户在注册好交互器数据后的操作（用于重写的方法）
-     * @param user 当前的群聊交互成员
-     */
-    @Override
-    public void onGroupUserIn(@NotNull final GroupInteractorUser user) {
-    }
-
-    /**
-     * 私聊交互用户初次与本交互器交互时的操作
-     * @param user 当前的私聊交互成员
-     */
-    @Override
-    public final void onPrivateUserIn(@NotNull final PrivateDispatcherUser user) {
-        if (!islocater.containsKey(user.getQQ())) {
-            final PrivateInteractorUser interactorUser = new PrivateInteractorUserImpl();
-            interactorUser.setPrivateMsg(user.getPrivateMsg());
-            islocater.put(user.getQQ(), interactorUser);
-            onPrivateUserIn(interactorUser);
-        } else {
-            throw new IllegalArgumentException("private dispatcher user " + user.getQQString() + " already be initialized!");
-        }
-    }
-
-    /**
-     * 私聊交互用户在注册好交互器数据后的操作（用于重写的方法）
-     * @param user 当前的群聊交互成员
-     */
-    @Override
-    public void onPrivateUserIn(@NotNull final PrivateInteractorUser user) {
-    }
-
-    @Override
-    public final void onUserExit(@NotNull final InteractorUser user) {
+    public final void onUserExit(final InteractorUser user) {
         removeUser(user.getQQ());
     }
 
@@ -161,11 +91,11 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
      * @throws Exception 交互出现的异常
      */
     @Override
-    public final boolean interact(@NotNull final DispatcherUser user) throws Exception {
-        // 先判断是否交互过，如果没有由交互器完成初始化操作
+    public final boolean interact(final DispatcherUser user) throws Exception {
         InteractorUser interactorUser = getUser(user.getQQ());
 
         if (Objects.nonNull(interactorUser)) {
+            // 如果交互过，只需要设置数据来交互就行
             if (interactorUser instanceof GroupInteractorUser != user instanceof GroupDispatcherUser) {
                 // 类型不一致时意味着用户在群聊和私聊间穿越，此时转换用户数据，以当前交互场所为准，也就是 user 的类型
                 final MessageWaiter messageWaiter = interactorUser.getMessageWaiter();
@@ -179,6 +109,8 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
                     interactorUser = new PrivateInteractorUserImpl();
                     ((PrivateInteractorUser) interactorUser).setPrivateMsg(((PrivateDispatcherUser) user).getPrivateMsg());
                     putUser(user.getQQ(), interactorUser);
+                } else {
+                    throw new IllegalArgumentException("interactor user must be instance of GroupInteractorUser or PrivateInteractorUser");
                 }
                 interactorUser.setMessageWaiter(messageWaiter);
             } else {
@@ -191,16 +123,25 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
                     throw new IllegalArgumentException("interactor user must be instance of GroupInteractorUser or PrivateInteractorUser");
                 }
             }
+
             return interact(interactorUser);
         } else {
-            onUserIn(user);
-            interactorUser = getUser(user.getQQ());
-            return true;
+            // 没交互过，设置相关信息后开始交互
+            if (user instanceof GroupDispatcherUser) {
+                interactorUser = new GroupInteractorUserImpl();
+                ((GroupInteractorUserImpl) interactorUser).setGroupMsg(((GroupDispatcherUser) user).getGroupMsg());
+            } else if (user instanceof PrivateDispatcherUser) {
+                interactorUser = new PrivateInteractorUserImpl();
+                ((PrivateInteractorUserImpl) interactorUser).setPrivateMsg(((PrivateDispatcherUser) user).getPrivateMsg());
+            } else {
+                throw new IllegalArgumentException("dispatcher user must be instance of GroupDispatcherUser or PrivateDispatcherUser");
+            }
+            putUser(user.getQQ(), interactorUser);
+            return interact(interactorUser);
         }
     }
 
-    @Override
-    public final boolean interact(@NotNull final InteractorUser user) throws Exception {
+    public final boolean interact(final InteractorUser user) throws Exception {
         if (user instanceof GroupInteractorUser || user instanceof PrivateInteractorUser) {
             final MessageWaiter messageWaiter = user.getMessageWaiter();
             if (Objects.nonNull(messageWaiter)) {
@@ -241,7 +182,12 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
                                 break;
                             }
                         } else {
-                            throw new NoSuchElementException("parameters of interact method must all be instance of InteractorUser");
+                            final Object o = onParameter(user, parameter);
+                            if (Objects.nonNull(o)) {
+                                arguments.add(o);
+                            } else {
+                                throw new NoSuchElementException("parameters of interact method must all be instance of InteractorUser");
+                            }
                         }
                     }
 
@@ -253,7 +199,6 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
                     try {
                         method.invoke(this, arguments.toArray(new Object[0]));
                         setWillExit(user);
-                    } catch (TimeoutCancellationException ignored) {
                     } catch (InteactorTimeoutException exception) {
                         setWillExit(user);
                     }
@@ -269,7 +214,7 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
 
     @Override
     @NotNull
-    public final NoParameterMethod getDefaultTimeoutMethod(@NotNull final InteractorUser user,
+    public final NoParameterMethod getDefaultTimeoutMethod(final InteractorUser user,
                                                            long timeOutTime) {
         return () -> {
             user.sendMessage("你已经{}没有理小明了，我们下次见哦", TimeUtil.toTimeString(timeOutTime));
@@ -280,10 +225,10 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
 
     @Override
     @Nullable
-    public final String getNextInput(@NotNull final InteractorUser user,
+    public final String getNextInput(final InteractorUser user,
                                      long timeOutTime,
                                      @Nullable String defaultValue,
-                                     @NotNull NoParameterMethod method) {
+                                     NoParameterMethod method) {
         MessageWaiter messageWaiter = new MessageWaiterImpl(System.currentTimeMillis() + timeOutTime, defaultValue);
         user.setMessageWaiter(messageWaiter);
         try {
@@ -302,7 +247,12 @@ public abstract class InteractorImpl extends PluginObjectImpl implements Interac
     }
 
     @Override
-    public final void onGetNextInput(@NotNull final InteractorUser user) {
+    public Object onParameter(final InteractorUser user, final Parameter parameter) {
+        return null;
+    }
+
+    @Override
+    public final void onGetNextInput(final InteractorUser user) {
         user.getMessageWaiter().onInput(user.getMessage());
     }
 

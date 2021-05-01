@@ -1,5 +1,6 @@
 package com.taixue.xiaoming.bot.api.listener.interactor;
 
+import com.taixue.xiaoming.bot.api.annotation.InteractMethod;
 import com.taixue.xiaoming.bot.api.base.PluginObject;
 import com.taixue.xiaoming.bot.api.listener.UserDataIslocated;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.DispatcherUser;
@@ -13,6 +14,7 @@ import com.taixue.xiaoming.bot.util.TimeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Parameter;
 import java.util.Set;
 
 public interface Interactor extends UserDataIslocated<Long, InteractorUser>, PluginObject {
@@ -24,68 +26,63 @@ public interface Interactor extends UserDataIslocated<Long, InteractorUser>, Plu
 
     void setWillExit(long qq);
 
-    void setWillExit(@NotNull InteractorUser user);
+    default void setWillExit(InteractorUser user) {
+        user.shouldExit();
+        onUserExit(user);
+    }
 
     boolean isWillExit(long qq);
 
-    boolean isWillExit(@NotNull InteractorUser user);
+    default boolean isWillExit(InteractorUser user) {
+        return isWillExit(user.getQQ());
+    }
 
     /**
      * 判断是否当前轮到本交互器交互
      * @param user
      * @return
      */
-    boolean willInteract(@NotNull DispatcherUser user);
+    boolean willInteract(DispatcherUser user);
 
-    void onUserIn(@NotNull DispatcherUser user);
+    void onUserExit(InteractorUser user);
 
-    void onGroupUserIn(@NotNull GroupDispatcherUser user);
-
-    void onGroupUserIn(@NotNull GroupInteractorUser user);
-
-    void onPrivateUserIn(@NotNull PrivateDispatcherUser user);
-
-    void onPrivateUserIn(@NotNull PrivateInteractorUser user);
-
-    void onUserExit(@NotNull InteractorUser user);
-
-    boolean interact(@NotNull DispatcherUser user) throws Exception;
-
-    boolean interact(@NotNull InteractorUser user) throws Exception;
+    boolean interact(DispatcherUser user) throws Exception;
 
     @NotNull
-    NoParameterMethod getDefaultTimeoutMethod(@NotNull InteractorUser user,
+    NoParameterMethod getDefaultTimeoutMethod(InteractorUser user,
                                               long timeOutTime);
 
     @Nullable
-    default String getNextInput(@NotNull final InteractorUser user,
-                                     @Nullable String defaultValue) {
+    default String getNextInput(InteractorUser user,
+                                @Nullable String defaultValue) {
         return getNextInput(user, NEXT_INPUT_TIMEOUT_TIME, defaultValue);
     }
 
     @Nullable
-    default String getNextInput(@NotNull final InteractorUser user,
-                                     long timeOutTime) {
+    default String getNextInput(InteractorUser user,
+                                long timeOutTime) {
         return getNextInput(user, timeOutTime, null);
     }
 
     @Nullable
-    default String getNextInput(@NotNull final InteractorUser user) {
+    default String getNextInput(InteractorUser user) {
         return getNextInput(user, NEXT_INPUT_TIMEOUT_TIME);
     }
 
     @Nullable
-    default String getNextInput(@NotNull final InteractorUser user,
-                                     long timeOutTime,
-                                     @Nullable String defaultValue) {
+    default String getNextInput(InteractorUser user,
+                                long timeOutTime,
+                                @Nullable String defaultValue) {
         return getNextInput(user, timeOutTime, defaultValue, getDefaultTimeoutMethod(user, timeOutTime));
     }
 
     @Nullable
-    String getNextInput(@NotNull InteractorUser user,
+    String getNextInput(InteractorUser user,
                         long timeOutTime,
                         @Nullable String defaultValue,
-                        @NotNull NoParameterMethod method);
+                        NoParameterMethod method);
 
-    void onGetNextInput(@NotNull InteractorUser user);
+    void onGetNextInput(InteractorUser user);
+
+    Object onParameter(InteractorUser user, Parameter parameter);
 }

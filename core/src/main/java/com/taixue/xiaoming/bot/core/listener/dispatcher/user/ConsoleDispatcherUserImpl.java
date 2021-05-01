@@ -17,6 +17,7 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
     @Override
     public void setMessage(String message) {
         this.message = message;
+        getRecentInputs().add(message);
     }
 
     @Override
@@ -27,11 +28,6 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
     @Override
     public boolean hasPermission(String node) {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return "CONSOLE";
     }
 
     @Override
@@ -75,12 +71,19 @@ public class ConsoleDispatcherUserImpl extends DispatcherUserImpl implements Con
     }
 
     @Override
-    public void sendGroupMessage(String message) {
-        getLogger().info("(群消息：)" + getGroupString() + "：" + message);
+    public boolean sendGroupMessage(String message, Object... arguments) {
+        getLogger().info("(群消息) [" + getGroupInfo().getGroupName() + "（" + getGroupString() + "）" + "] " + ArgumentUtil.replaceArguments(message, arguments));
+        return true;
     }
 
     @Override
-    public void sendPrivateMessage(String message, Object... arguments) {
-        getLogger().info("(私聊消息：)：" + message);
+    public boolean sendPrivateMessage(String message, Object... arguments) {
+        getLogger().info("(私聊消息) " + ArgumentUtil.replaceArguments(message, arguments));
+        return true;
+    }
+
+    @Override
+    public String getCompleteName() {
+        return "[[控制台]] " + super.getCompleteName();
     }
 }

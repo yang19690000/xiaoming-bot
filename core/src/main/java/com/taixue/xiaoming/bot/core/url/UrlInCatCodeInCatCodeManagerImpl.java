@@ -1,18 +1,25 @@
 package com.taixue.xiaoming.bot.core.url;
 
 import com.taixue.xiaoming.bot.api.url.UrlInCatCodeManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.regex.Matcher;
 
 public class UrlInCatCodeInCatCodeManagerImpl extends UrlManagerImpl implements UrlInCatCodeManager {
-
     @Override
     public String requireRecordedCatCode(final String catCode) {
+        requireRecordedUrl(requireUrl(catCode));
+        return catCode;
+    }
+
+    @Override
+    @NotNull
+    public String requireUrl(final String catCode) {
         Matcher matcher = URL_PATTERN.matcher(catCode);
         if (matcher.matches()) {
-            return requireRecordedUrl(matcher.group("url"));
+            return matcher.group("url");
         } else {
             throw new IllegalArgumentException("syntax error: cat code string: " + catCode);
         }
@@ -40,7 +47,7 @@ public class UrlInCatCodeInCatCodeManagerImpl extends UrlManagerImpl implements 
     public List<String> listCatCodes(String string) {
         List<String> result = new ArrayList<>();
         int left = string.indexOf("[CAT:image");
-        int right = Integer.MAX_VALUE;
+        int right;
 
         while (left != -1) {
             right = string.indexOf("]", left);

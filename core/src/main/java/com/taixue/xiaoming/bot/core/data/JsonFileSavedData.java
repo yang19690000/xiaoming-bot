@@ -14,11 +14,13 @@ public class JsonFileSavedData extends FileSavedDataImpl {
     @Override
     public void saveThrowsException() throws Exception {
         final File file = getFile();
-        if (!file.exists() || file.isDirectory()) {
+        if (!file.isFile()) {
             file.createNewFile();
         }
-        try (FileOutputStream fileOutputStream = new FileOutputStream(getFile())) {
-            JsonSerializerUtil.getInstance().writeValue(fileOutputStream, this);
+        synchronized (this) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(getFile())) {
+                JsonSerializerUtil.getInstance().writeValue(fileOutputStream, this);
+            }
         }
     }
 }

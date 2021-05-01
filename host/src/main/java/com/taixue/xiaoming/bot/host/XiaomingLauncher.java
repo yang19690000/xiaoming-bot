@@ -3,16 +3,20 @@ package com.taixue.xiaoming.bot.host;
 import com.taixue.xiaoming.bot.api.config.BotAccount;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
 import com.taixue.xiaoming.bot.api.config.BotAccountConfig;
+import com.taixue.xiaoming.bot.api.data.RegularSaveDataManager;
 import com.taixue.xiaoming.bot.api.group.Group;
 import com.taixue.xiaoming.bot.api.bot.XiaomingBot;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.ConsoleDispatcherUser;
+import com.taixue.xiaoming.bot.api.listener.interactor.InteractorManager;
+import com.taixue.xiaoming.bot.api.plugin.PluginManager;
+import com.taixue.xiaoming.bot.api.user.XiaomingUser;
 import com.taixue.xiaoming.bot.core.base.HostObjectImpl;
 import com.taixue.xiaoming.bot.core.bot.XiaomingBotImpl;
 import com.taixue.xiaoming.bot.core.listener.dispatcher.user.ConsoleDispatcherUserImpl;
 import com.taixue.xiaoming.bot.core.runnable.RegularCounterSaveRunnable;
+import com.taixue.xiaoming.bot.host.Interactor.CoreInteractor;
 import com.taixue.xiaoming.bot.host.command.executor.*;
 import com.taixue.xiaoming.bot.host.runnable.ConsoleCommandRunnable;
-import com.taixue.xiaoming.bot.util.FileUtil;
 import com.taixue.xiaoming.bot.util.PathUtil;
 import love.forte.common.configuration.Configuration;
 import love.forte.simbot.annotation.SimbotApplication;
@@ -25,26 +29,33 @@ import love.forte.simbot.core.SimbotContext;
 import love.forte.simbot.core.SimbotProcess;
 import net.mamoe.mirai.contact.BotIsBeingMutedException;
 import org.slf4j.Logger;
+import sun.misc.Signal;
 
-import java.io.File;
-import java.io.IOException;
+import com.taixue.xiaoming.bot.host.hook.ShutdownHook;
+
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 /**
  * 小明的启动器类
  */
 @SimbotApplication
 public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
+    static final Random RANDOM = new Random();
+    public static final String VERSION = "1.0 TEST";
+    public static final String AUTHOR = "Chuanwise";
+    public static final String GITHUB = "https://github.com/Chuanwise/xiaoming-bot";
+
     /**
      * 小明本体
      */
-    private static final XiaomingBot XIAOMING_BOT = new XiaomingBotImpl();
+    static final XiaomingBot XIAOMING_BOT = new XiaomingBotImpl();
 
     /**
      * 小明启动器
      */
-    private static final XiaomingLauncher INSTANCE = new XiaomingLauncher();
+    static final XiaomingLauncher INSTANCE = new XiaomingLauncher();
 
     public static XiaomingLauncher getInstance() {
         return INSTANCE;
@@ -53,7 +64,7 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
     /**
      * 小明控制台指令发送者
      */
-    private final ConsoleDispatcherUser consoleXiaomingUser = new ConsoleDispatcherUserImpl();
+    final ConsoleDispatcherUser consoleXiaomingUser = new ConsoleDispatcherUserImpl();
 
     public ConsoleDispatcherUser getConsoleXiaomingUser() {
         return consoleXiaomingUser;
@@ -62,19 +73,21 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
     /**
      * 一些内核注册的指令处理器
      */
-    private final CoreCommandExecutor coreCommandExecutor = new CoreCommandExecutor();
-    private final GroupCommandExecutor groupCommandExecutor = new GroupCommandExecutor();
-    private final EmojiCommandExecutor emojiCommandExecutor = new EmojiCommandExecutor();
-    private final PermissionCommandExecutor permissionCommandExecutor = new PermissionCommandExecutor();
-    private final ConsoleCommandRunnable consoleCommandRunnable = new ConsoleCommandRunnable();
-    private final AccountCommandExecutor accountCommandExecutor = new AccountCommandExecutor();
-    private final CallLimitCommandExecutor callLimitCommandExecutor = new CallLimitCommandExecutor();
-    private final UsefulCommandExecutor usefulCommandExecutor = new UsefulCommandExecutor();
+    final CoreCommandExecutor coreCommandExecutor = new CoreCommandExecutor();
+    final GroupCommandExecutor groupCommandExecutor = new GroupCommandExecutor();
+    final EmojiCommandExecutor emojiCommandExecutor = new EmojiCommandExecutor();
+    final PermissionCommandExecutor permissionCommandExecutor = new PermissionCommandExecutor();
+    final ConsoleCommandRunnable consoleCommandRunnable = new ConsoleCommandRunnable();
+    final AccountCommandExecutor accountCommandExecutor = new AccountCommandExecutor();
+    final CallLimitCommandExecutor callLimitCommandExecutor = new CallLimitCommandExecutor();
+    final DebugCommandExecutor debugCommandExecutor = new DebugCommandExecutor();
 
     /**
      * 定时保存相关运行时数据
      */
-    private final RegularCounterSaveRunnable regularCounterSaveRunnable = new RegularCounterSaveRunnable();
+    final RegularCounterSaveRunnable regularCounterSaveRunnable = new RegularCounterSaveRunnable();
+
+    final CoreInteractor coreInteractor = new CoreInteractor();
 
     /**
      * 登录所有的机器人账号
@@ -86,7 +99,7 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
         final List<BotAccount> accounts = config.getAccounts();
 
         if (!config.getFile().exists() || accounts.isEmpty()) {
-            config.save();
+            config.readySave();
             getLogger().error("请打开 {} 并设置机器人账号密码", config.getFile().getAbsolutePath());
             return false;
         } else {
@@ -108,6 +121,7 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
      */
     public void initFiles(final SimbotContext context) {
         // 复制默认的表情文件
+        /*
         final File emojisFile = getXiaomingBot().getEmojiManager().getFile();
         if (!emojisFile.exists()) {
             try {
@@ -115,6 +129,42 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
             } catch (IOException ignored) {
             }
         }
+
+         */
+    }
+
+    public void enableCore() {
+        final XiaomingBot xiaomingBot = getXiaomingBot();
+
+        // 注册内核指令处理器
+        final CommandManager commandManager = xiaomingBot.getCommandManager();
+        commandManager.registerAsCore(coreCommandExecutor);
+        commandManager.registerAsCore(groupCommandExecutor);
+        commandManager.registerAsCore(emojiCommandExecutor);
+        commandManager.registerAsCore(permissionCommandExecutor);
+        commandManager.registerAsCore(consoleCommandRunnable);
+        commandManager.registerAsCore(accountCommandExecutor);
+        commandManager.registerAsCore(callLimitCommandExecutor);
+        commandManager.registerAsCore(debugCommandExecutor);
+
+        // 加载内核交互器
+        final InteractorManager interactorManager = xiaomingBot.getInteractorManager();
+        // 测试用交互器
+        // interactorManager.registerAsCore(coreInteractor);
+
+        // 启动控制台指令线程
+        xiaomingBot.execute(consoleCommandRunnable);
+        // 启动定期保存运行数据线程
+        xiaomingBot.execute(regularCounterSaveRunnable);
+
+        // 设置调用限制
+        xiaomingBot.getUserCallLimitManager().getGroupCallLimiter().setConfig(xiaomingBot.getConfig().getGroupCallConfig());
+        xiaomingBot.getUserCallLimitManager().getPrivateCallLimiter().setConfig(xiaomingBot.getConfig().getPrivateCallConfig());
+
+        // 加载插件
+        final PluginManager pluginManager = xiaomingBot.getPluginManager();
+        pluginManager.loadAllPlugins(consoleXiaomingUser);
+
     }
 
     /**
@@ -145,33 +195,13 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
             return;
         }
 
-        // 注册内核指令处理器
-        final CommandManager commandManager = xiaomingBot.getCommandManager();
-        commandManager.registerAsCore(coreCommandExecutor);
-        commandManager.registerAsCore(groupCommandExecutor);
-        commandManager.registerAsCore(emojiCommandExecutor);
-        commandManager.registerAsCore(permissionCommandExecutor);
-        commandManager.registerAsCore(consoleCommandRunnable);
-        commandManager.registerAsCore(accountCommandExecutor);
-        commandManager.registerAsCore(callLimitCommandExecutor);
-        commandManager.registerAsCore(usefulCommandExecutor);
-
-        // 加载插件
-        xiaomingBot.getPluginManager().loadAllPlugins(consoleXiaomingUser);
-
-        // 启动控制台指令线程
-        xiaomingBot.execute(consoleCommandRunnable);
-        // 启动定期保存运行数据线程
-        xiaomingBot.execute(regularCounterSaveRunnable);
-
-        // 设置调用限制
-        xiaomingBot.getUserCallLimitManager().getGroupCallLimiter().setConfig(xiaomingBot.getConfig().getGroupCallConfig());
-        xiaomingBot.getUserCallLimitManager().getPrivateCallLimiter().setConfig(xiaomingBot.getConfig().getPrivateCallConfig());
+        // 启动内核
+        enableCore();
 
         // 在所有的日志群通知小明已启动
         for (Group logGroup : xiaomingBot.getGroupManager().forTag("log")) {
             try {
-                sender.SENDER.sendGroupMsg(logGroup.getCode(), "小明正常启动" + getXiaomingBot().getEmojiManager().get("happy"));
+                sender.SENDER.sendGroupMsg(logGroup.getCode(), "小明正常启动 " + getXiaomingBot().getEmojiManager().get("happy"));
             } catch (NoSuchElementException exception) {
                 logger.error("小明找到日志群 {}", logGroup.getCode());
             } catch (BotIsBeingMutedException exception) {
@@ -181,12 +211,36 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
                 exception.printStackTrace();
             }
         }
-
-        logger.info("小明正常启动" + getXiaomingBot().getEmojiManager().get("happy"));
+        logger.info("小明正常启动 " + getXiaomingBot().getEmojiManager().get("happy"));
     }
 
     @Override
     public void pre(final Configuration config) {
+        System.out.println();
+        System.out.println(" __   __ _                __  __  _               \n" +
+                " \\ \\ / /(_)              |  \\/  |(_)              \n" +
+                "  \\ V /  _   __ _   ___  | \\  / | _  _ __    __ _ \n" +
+                "   > <  | | / _` | / _ \\ | |\\/| || || '_ \\  / _` |\n" +
+                "  / . \\ | || (_| || (_) || |  | || || | | || (_| |\n" +
+                " /_/ \\_\\|_| \\__,_| \\___/ |_|  |_||_||_| |_| \\__, |\n" +
+                "                                             __/ |\n" +
+                "                                            |___/ \n" +
+                "                                        @" + AUTHOR + "\n" +
+                "version: " + VERSION + "\n" +
+                "github: " + GITHUB + "\n");
+    }
+
+    public void close(final XiaomingUser user) {
+        user.sendMessage("正在关闭进程池");
+        XIAOMING_BOT.getService().shutdown();
+
+        final RegularSaveDataManager regularSaveDataManager = getXiaomingBot().getRegularSaveDataManager();
+        if (regularSaveDataManager.getSaveSet().isEmpty()) {
+            user.sendMessage("没有任何需要保存的数据");
+        } else {
+            user.sendMessage("正在保存数据");
+            regularSaveDataManager.save(user);
+        }
     }
 
     public static void main(final String[] args) {
@@ -194,6 +248,16 @@ public class XiaomingLauncher extends HostObjectImpl implements SimbotProcess {
         PathUtil.CONFIG_DIR.mkdirs();
         PathUtil.PLUGIN_DIR.mkdirs();
         PathUtil.ACCOUNT_DIR.mkdirs();
+
+//        // 获取系统类型
+//        final String osType = System.getProperties().getProperty("os.name").toLowerCase().startsWith("win") ? "INT" : "USR2";
+//
+//        // 设置小明关闭监听器
+//        Signal sig = new Signal(osType);
+//        Signal.handle(sig, signal -> {
+//            Thread t = new Thread(new ShutdownHook(), "ShutdownHook-Thread");
+//            Runtime.getRuntime().addShutdownHook(t);
+//        });
 
         // 启动小明
         SimbotApp.run(XiaomingLauncher.class, args);

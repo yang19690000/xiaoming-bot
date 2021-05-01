@@ -15,31 +15,25 @@ public interface CommandExecutor extends PluginObject {
 
     void reloadSubcommandExecutor();
 
-    boolean verifyPermissionAndReport(@NotNull XiaomingUser sender,
-                                      @NotNull String node);
-
-    void tellLackPermission(@NotNull XiaomingUser sender,
-                            @NotNull String node);
-
     @NotNull
     String getCommandPrefix();
 
-    boolean onCommand(@NotNull DispatcherUser user) throws Exception;
+    boolean onCommand(DispatcherUser user) throws Exception;
 
     @Nullable
-    Object onParameter(@NotNull Parameter parameter);
+    Object onParameter(Parameter parameter);
 
     @Nullable
-    Object onParameter(@NotNull DispatcherUser user,
-                       @NotNull Class<?> clazz,
-                       @NotNull String parameterName,
+    Object onParameter(DispatcherUser user,
+                       Class<?> clazz,
+                       String parameterName,
                        @Nullable String value);
 
     @NotNull
     String getHelpPrefix();
 
-    Set<String> getUsageStrings(@NotNull XiaomingUser user);
+    Set<String> getUsageStrings(XiaomingUser user);
 
-    void onHelp(@NotNull XiaomingUser user);
+    void onHelp(XiaomingUser user);
 
 }

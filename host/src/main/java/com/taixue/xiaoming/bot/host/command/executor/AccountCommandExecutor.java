@@ -3,7 +3,6 @@ package com.taixue.xiaoming.bot.host.command.executor;
 import com.taixue.xiaoming.bot.api.account.Account;
 import com.taixue.xiaoming.bot.api.account.AccountManager;
 import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
-import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.user.GroupXiaomingUser;
@@ -57,7 +56,7 @@ public class AccountCommandExecutor extends CommandExecutorImpl {
         final Account account = accountManager.getOrPutAccount(user.getQQ());
         if (account.isBlockPlugin(plugin)) {
             account.getBlockPlugins().remove(plugin);
-            account.save();
+            account.readySave();
             if (getXiaomingBot().getPluginManager().isLoaded(plugin)) {
                 user.sendMessage("成功取消屏蔽了插件{}", plugin);
             } else {
@@ -77,7 +76,7 @@ public class AccountCommandExecutor extends CommandExecutorImpl {
             user.sendMessage("你已经屏蔽了插件{}", plugin);
         } else {
             account.addBlockPlugin(plugin);
-            account.save();
+            account.readySave();
             if (getXiaomingBot().getPluginManager().isLoaded(plugin)) {
                 user.sendMessage("成功屏蔽了插件{}", plugin);
             } else {

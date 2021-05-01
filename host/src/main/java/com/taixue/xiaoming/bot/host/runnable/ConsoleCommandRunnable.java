@@ -1,11 +1,13 @@
 package com.taixue.xiaoming.bot.host.runnable;
 
 import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
+import com.taixue.xiaoming.bot.api.bot.XiaomingBot;
 import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
 import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.ConsoleDispatcherUser;
+import com.taixue.xiaoming.bot.api.user.XiaomingUser;
 import com.taixue.xiaoming.bot.core.command.executor.CommandExecutorImpl;
 import com.taixue.xiaoming.bot.core.user.XiaomingUserImpl;
 import com.taixue.xiaoming.bot.host.XiaomingLauncher;
@@ -17,36 +19,12 @@ import java.util.Set;
 
 public class ConsoleCommandRunnable extends CommandExecutorImpl implements Runnable {
     private final String COMMAND_HEAD_REGEX = "(控制台|console|后台)";
-    /*
-    @CommandFormat("stop")
-    public void onStop(CommandSender sender) {
-        XiaomingBot xiaomingBot = XiaomingBot.getInstance();
-        sender.sendMessage("开始关闭服务器");
-        sender.sendMessage("卸载所有插件");
-        unloadAllPlugins(sender);
-        sender.sendMessage("插件卸载完成");
 
-        sender.sendMessage("保存权限系统文件");
-        xiaomingBot.getPermissionSystem().save();
-
-        sender.sendMessage("卸载指令处理器");
-        xiaomingBot.getCommandManager().unloadAll();
-
-        sender.sendMessage("卸载群组交互器");
-        GroupInteractorManager groupInteractorManager = xiaomingBot.getGroupInteractorManager();
-        for (GroupInteractor interactor : groupInteractorManager.getInteractors()) {
-            try {
-                sender.sendMessage("\t正在卸载 {}（加载自插件 {}）", interactor.getClass(), interactor.getPlugin().getName());
-                unloadGroupInteactor(sender, interactor);
-            }
-            catch (Exception exception) {
-
-            }
-        }
-
-        System.exit(0);
+    @Command("stop")
+    public void onStop(final XiaomingUser user) {
+        XiaomingLauncher.getInstance().close(user);
     }
-
+/*
     public void unloadGroupInteactor(CommandSender sender, GroupInteractor interactor) {
         UserDataIsolator userDataIsolator = interactor.getUserDataIsolator();
         if (userDataIsolator.getValue().isEmpty()) {
@@ -130,8 +108,7 @@ public class ConsoleCommandRunnable extends CommandExecutorImpl implements Runna
                     if (!executed) {
                         getLogger().error("小明不知道你的意思 (；′⌒`)");
                     }
-                }
-                catch (Exception exception) {
+                } catch (Exception exception) {
                     exception.printStackTrace();
                 }
             }

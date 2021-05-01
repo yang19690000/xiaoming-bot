@@ -1,6 +1,7 @@
 package com.taixue.xiaoming.bot.api.url;
 
 import com.taixue.xiaoming.bot.api.data.FileSavedData;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -11,6 +12,9 @@ public interface UrlInCatCodeManager extends FileSavedData, UrlManager, CatCodeM
 
     @Override
     String requireRecordedCatCode(String catCode);
+
+    @NotNull
+    String requireUrl(final String catCode);
 
     @Nullable
     String requireRecordedMessage(String message);

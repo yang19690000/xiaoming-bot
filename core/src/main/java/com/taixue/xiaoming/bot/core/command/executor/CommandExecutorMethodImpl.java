@@ -43,8 +43,10 @@ public class CommandExecutorMethodImpl implements CommandExecutorMethod {
             final StringBuilder builder = new StringBuilder(format.pattern.pattern()
                     .replaceAll(Pattern.quote("\\s+"), "  ")
                     .replaceAll(Pattern.quote("(?"), "")
-                    .replaceAll(Pattern.quote(".*)"), "")
-                    .replaceAll(Pattern.quote("\\S+)"), ""));
+                    .replaceAll(Pattern.quote(CommandFormat.NORMAL_VARIABLE_REGEX + ")"), "")
+                    .replaceAll(Pattern.quote(CommandFormat.REMAIN_VARIABLE_REGEX + ")"), "")
+                    .replaceAll(Pattern.quote("\\[CAT:at,code="), "@")
+                    .replaceAll(Pattern.quote("\\]"), ""));
             while (true) {
                 final Matcher matcher = CommandExecutor.PARAMETER_REGEX.matcher(builder);
                 if (matcher.find()) {

@@ -6,7 +6,7 @@ public class CommandWordUtil {
     public static final String LOOK_REGEX = "(查看|罗列|list|look)";
     public static final String NEW_REGEX = "(新增|新建|增加|增添|添加|新|add|new)";
     public static final String REMOVE_REGEX = "(删除|删掉|卸载|删|取消|移除|去除|减少|remove|delete)";
-    public static final String PERSONAL_REGEX = "(我的|私人|私有|用户|my|personal|private)";
+    public static final String PERSONAL_REGEX = "(我的|我|私人|私有|用户|me|my|personal|private)";
     public static final String OTHER_REGEX = "(他人|别人|他|别人|his|her|its)";
     public static final String PLUGIN_REGEX = "(插件|plugin|plugins)";
     public static final String PERMISSION_GROUP_REGEX = "(权限|权限组|permission)";
@@ -31,4 +31,9 @@ public class CommandWordUtil {
     public static final String LIMIT_REGEX = "(限制|limit)";
     public static final String CALL_REGEX = "(调用|召唤|call|invoke)";
     public static final String UNBLOCK_REGEX = CANCEL_REGEX + BLOCK_REGEX;
+    public static final String RECENT_REGEX = "(近期|最近|last|recent)";
+    public static final String EXCEPTION_REGEX = "(异常|exception)";
+    public static final String CLEAR_REGEX = "(清空|清除|clear)";
+    public static final String SAVE_REGEX = "(保存|save)";
+    public static final String SEARCH_REGEX = "(查|查询|search)";
 }

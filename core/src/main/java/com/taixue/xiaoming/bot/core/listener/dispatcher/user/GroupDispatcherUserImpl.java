@@ -34,11 +34,6 @@ public class GroupDispatcherUserImpl extends DispatcherUserImpl implements Group
     }
 
     @Override
-    public String getName() {
-        return getQQString();
-    }
-
-    @Override
     public GroupInfo getGroupInfo() {
         return groupMsg.getGroupInfo();
     }
@@ -46,5 +41,10 @@ public class GroupDispatcherUserImpl extends DispatcherUserImpl implements Group
     @Override
     public GroupMsg getGroupMsg() {
         return groupMsg;
+    }
+
+    @Override
+    public String getCompleteName() {
+        return "[ " + getGroupInfo().getGroupName() + "（" + getGroupString() + "）" + "] " + super.getCompleteName();
     }
 }

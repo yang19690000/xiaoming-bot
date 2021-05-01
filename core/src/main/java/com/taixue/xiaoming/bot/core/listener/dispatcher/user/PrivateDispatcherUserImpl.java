@@ -8,11 +8,13 @@ import love.forte.simbot.api.sender.MsgSender;
 public class PrivateDispatcherUserImpl extends DispatcherUserImpl implements PrivateDispatcherUser {
     private PrivateMsg privateMsg;
 
-    @Override public PrivateMsg getPrivateMsg() {
+    @Override
+    public PrivateMsg getPrivateMsg() {
         return privateMsg;
     }
 
-    @Override public void setPrivateMsg(PrivateMsg privateMsg) {
+    @Override
+    public void setPrivateMsg(PrivateMsg privateMsg) {
         this.privateMsg = privateMsg;
     }
 
@@ -29,10 +31,5 @@ public class PrivateDispatcherUserImpl extends DispatcherUserImpl implements Pri
     @Override
     public boolean hasPermission(String node) {
         return getXiaomingBot().getPermissionManager().userHasPermission(getQQ(), node);
-    }
-
-    @Override
-    public String getName() {
-        return getQQString();
     }
 }

@@ -10,17 +10,20 @@ public interface ConsoleXiaomingUser extends XiaomingUser {
     String getName();
 
     @Override
-    default void sendError(String message, Object... arguments) {
+    default boolean sendError(String message, Object... arguments) {
         getLogger().error(ArgumentUtil.replaceArguments(message, arguments));
+        return true;
     }
 
     @Override
-    default void sendMessage(String message, Object... arguments) {
+    default boolean sendMessage(String message, Object... arguments) {
         getLogger().info(ArgumentUtil.replaceArguments(message, arguments));
+        return true;
     }
 
     @Override
-    default void sendWarning(String message, Object... arguments) {
+    default boolean sendWarning(String message, Object... arguments) {
         getLogger().warn(ArgumentUtil.replaceArguments(message, arguments));
+        return true;
     }
 }

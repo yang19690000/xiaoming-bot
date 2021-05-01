@@ -13,19 +13,7 @@ public interface Dispatcher<UserDataType extends DispatcherUser> extends HostObj
     boolean onMessage(UserDataType user);
 
     void reportExceptionToLog(@NotNull DispatcherUser user,
-                              @NotNull Exception exception,
-                              @NotNull XiaomingPlugin plugin,
-                              @NotNull MsgSender msgSender);
-
-    void reportExceptionToLog(@NotNull DispatcherUser user,
-                              @NotNull Exception exception,
-                              @NotNull Interactor interactor,
-                              @NotNull MsgSender msgSender);
-
-    void reportExceptionToLog(@NotNull DispatcherUser user,
-                              @NotNull Exception exception,
-                              @NotNull CommandExecutor executor,
-                              @NotNull MsgSender msgSender);
+                              @NotNull Exception exception);
 
     void onInteractorNotFound(@NotNull UserDataType user);
 }

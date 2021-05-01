@@ -35,11 +35,6 @@ public class GroupInteractorUserImpl extends InteractorUserImpl implements Group
     }
 
     @Override
-    public String getName() {
-        return getQQString();
-    }
-
-    @Override
     public GroupMsg getGroupMsg() {
         return groupMsg;
     }

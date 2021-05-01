@@ -32,8 +32,11 @@ public class AccountManagerImpl extends HostObjectImpl implements AccountManager
                 return account;
             }
         }
-        File file = new File(directory, qq + ".json");
-        return file.isFile() ? loadAccount(file) : null;
+        final Account account = loadAccount(new File(directory, qq + ".json"));
+        if (Objects.nonNull(account)) {
+            accounts.add(account);
+        }
+        return account;
     }
 
     @Override
@@ -70,15 +73,9 @@ public class AccountManagerImpl extends HostObjectImpl implements AccountManager
     }
 
     @Override
-    @NotNull
+    @Nullable
     public Account loadAccount(final File file) {
-        try {
-            return getXiaomingBot().getFileSavedDataFactory().forFile(file, Account.class);
-        } catch (Exception exception) {
-            getLogger().error("载入用户数据文件 {} 时出现异常：{}", file, exception);
-            exception.printStackTrace();
-            return null;
-        }
+        return getXiaomingBot().getFileSavedDataFactory().forFile(file, Account.class);
     }
 
     public Set<Account> getAccounts() {

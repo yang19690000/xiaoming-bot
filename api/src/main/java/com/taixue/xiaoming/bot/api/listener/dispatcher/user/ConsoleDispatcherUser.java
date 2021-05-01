@@ -8,11 +8,17 @@ public interface ConsoleDispatcherUser extends DispatcherUser, GroupXiaomingUser
     void setMessage(String message);
 
     @Override
+    default String getName() {
+        return "CONSOLE";
+    }
+
+    @Override
     String getMessage();
 
     @Override
     long getQQ();
 
+    @Override
     long getGroup();
 
     void setQQ(long qq);
@@ -20,22 +26,20 @@ public interface ConsoleDispatcherUser extends DispatcherUser, GroupXiaomingUser
     void setGroup(long group);
 
     @Override
-    default void sendWarning(String message, Object... arguments) {
+    default boolean sendWarning(String message, Object... arguments) {
         getLogger().warn(message, arguments);
+        return true;
     }
 
     @Override
-    default void sendError(String message, Object... arguments) {
+    default boolean sendError(String message, Object... arguments) {
         getLogger().error(ArgumentUtil.replaceArguments(message, arguments));
+        return true;
     }
 
     @Override
-    default void sendMessage(String message, Object... arguments) {
+    default boolean sendMessage(String message, Object... arguments) {
         getLogger().info(ArgumentUtil.replaceArguments(message, arguments));
-    }
-
-    @Override
-    default void sendNoArgumentMessage(String message) {
-        getLogger().info(message);
+        return true;
     }
 }

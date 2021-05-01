@@ -14,6 +14,6 @@ public class CounterImpl extends JsonFileSavedData implements Counter {
     @Override
     public void increaseCallCounter() {
         callCounter++;
-        save();
+        readySave();
     }
 }

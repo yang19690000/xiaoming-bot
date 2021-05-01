@@ -1,6 +1,7 @@
 package com.taixue.xiaoming.bot.api.account;
 
 import com.taixue.xiaoming.bot.api.data.FileSavedData;
+import net.mamoe.mirai.event.events.UserEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -37,10 +38,7 @@ public interface Account extends FileSavedData {
 
     void setProperties(Map<String, Object> properties);
 
-    void addGroupMessage(long group,
-                         String message);
-
-    void addPrivateMessage(String message);
+    void addEvent(AccountEvent event);
 
     long getQq();
 
@@ -50,9 +48,9 @@ public interface Account extends FileSavedData {
 
     void setAlias(String alias);
 
-    List<AccountEvent> getCommands();
+    List<AccountEvent> getEvents();
 
-    void setCommands(List<AccountEvent> commands);
+    void setEvents(List<AccountEvent> events);
 
     List<AccountEvent> getHistories();
 

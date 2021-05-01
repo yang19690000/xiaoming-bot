@@ -14,7 +14,11 @@ public interface FileSavedDataFactory {
     default <T extends FileSavedData> T forFile(final File file,
                                                 final Class<T> clazz) {
         try {
-            return forFileThrowsException(file, clazz);
+            if (file.isFile()) {
+                return forFileThrowsException(file, clazz);
+            } else {
+                return null;
+            }
         } catch (IOException exception) {
             exception.printStackTrace();
             return null;
@@ -31,10 +35,7 @@ public interface FileSavedDataFactory {
     default <T extends FileSavedData> T forFileOrProduce(final File file,
                                                          final Class<T> clazz,
                                                          final DefaultFileSavedDataFactory<T> factory) {
-        T result = null;
-        if (file.exists()) {
-            result = forFile(file, clazz);
-        }
+        T result = forFile(file, clazz);
         if (Objects.isNull(result)) {
             result = factory.produce();
         }

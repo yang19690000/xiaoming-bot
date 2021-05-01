@@ -7,9 +7,14 @@ import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
 import com.taixue.xiaoming.bot.api.config.BotAccount;
 import com.taixue.xiaoming.bot.api.config.Config;
 import com.taixue.xiaoming.bot.api.config.Counter;
+import com.taixue.xiaoming.bot.api.data.RegularSaveDataManager;
+import com.taixue.xiaoming.bot.api.error.ErrorMessageManager;
 import com.taixue.xiaoming.bot.api.factory.normal.FileSavedDataFactory;
 import com.taixue.xiaoming.bot.api.limit.UserCallLimitManager;
+import com.taixue.xiaoming.bot.api.listener.dispatcher.user.ConsoleDispatcherUser;
 import com.taixue.xiaoming.bot.core.config.ConfigImpl;
+import com.taixue.xiaoming.bot.core.data.RegularSaveDataManagerImpl;
+import com.taixue.xiaoming.bot.core.error.ErrorMessageManagerImpl;
 import com.taixue.xiaoming.bot.core.limit.UserCallLimitManagerImpl;
 import com.taixue.xiaoming.bot.core.command.executor.CommandManagerImpl;
 import com.taixue.xiaoming.bot.core.config.BotAccountImpl;
@@ -27,6 +32,7 @@ import com.taixue.xiaoming.bot.api.permission.PermissionGroup;
 import com.taixue.xiaoming.bot.api.permission.PermissionManager;
 import com.taixue.xiaoming.bot.api.url.UrlInCatCodeManager;
 import com.taixue.xiaoming.bot.api.plugin.PluginManager;
+import com.taixue.xiaoming.bot.core.listener.dispatcher.user.ConsoleDispatcherUserImpl;
 import com.taixue.xiaoming.bot.core.listener.interactor.InteractorManagerImpl;
 import com.taixue.xiaoming.bot.core.permission.PermissionGroupImpl;
 import com.taixue.xiaoming.bot.core.permission.PermissionManagerImpl;
@@ -34,8 +40,6 @@ import com.taixue.xiaoming.bot.core.plugin.PluginManagerImpl;
 import com.taixue.xiaoming.bot.core.config.CounterImpl;
 import com.taixue.xiaoming.bot.core.url.UrlInCatCodeInCatCodeManagerImpl;
 import com.taixue.xiaoming.bot.util.PathUtil;
-import love.forte.common.ioc.annotation.Beans;
-import love.forte.common.ioc.annotation.Depend;
 import love.forte.simbot.api.sender.MsgSender;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +52,7 @@ public class XiaomingBotImpl implements XiaomingBot {
         XiaomingBotContainer.setBot(this);
     }
 
-    private final FileSavedDataFactory fileSavedDataFactory = new JsonFileSavedDataFactory();
+    final FileSavedDataFactory fileSavedDataFactory = new JsonFileSavedDataFactory();
 
     @Override
     public FileSavedDataFactory getFileSavedDataFactory() {
@@ -134,11 +138,15 @@ public class XiaomingBotImpl implements XiaomingBot {
 
     public static final int MAX_THREAD_NUMBER = 20;
 
-    public static final ExecutorService SERVICE = Executors.newFixedThreadPool(MAX_THREAD_NUMBER);
+    private final ExecutorService service = Executors.newFixedThreadPool(MAX_THREAD_NUMBER);
+
+    public ExecutorService getService() {
+        return service;
+    }
 
     @Override
     public void execute(final Runnable runnable) {
-        SERVICE.execute(runnable);
+        service.execute(runnable);
     }
 
     @Override
@@ -198,5 +206,32 @@ public class XiaomingBotImpl implements XiaomingBot {
     @Override
     public Counter getCounter() {
         return counter;
+    }
+
+    /**
+     * 小明错误记录器
+     */
+    final ErrorMessageManager errorMessageManager = fileSavedDataFactory
+            .forFileOrProduce(new File(PathUtil.CONFIG_DIR, "errors.json"),
+                    ErrorMessageManagerImpl.class,
+                    ErrorMessageManagerImpl::new);
+
+    @Override
+    public ErrorMessageManager getErrorMessageManager() {
+        return errorMessageManager;
+    }
+
+    final RegularSaveDataManager regularSaveDataManager = new RegularSaveDataManagerImpl();
+
+    @Override
+    public RegularSaveDataManager getRegularSaveDataManager() {
+        return regularSaveDataManager;
+    }
+
+    final ConsoleDispatcherUser consoleXiaomingUser = new ConsoleDispatcherUserImpl();
+
+    @Override
+    public ConsoleDispatcherUser getConsoleXiaomingUser() {
+        return consoleXiaomingUser;
     }
 }

@@ -5,8 +5,8 @@ import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
 import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
-import com.taixue.xiaoming.bot.api.config.BotAccountConfig;
 import com.taixue.xiaoming.bot.api.config.Config;
+import com.taixue.xiaoming.bot.api.data.RegularSaveDataManager;
 import com.taixue.xiaoming.bot.api.exception.XiaomingRuntimeException;
 import com.taixue.xiaoming.bot.api.listener.interactor.Interactor;
 import com.taixue.xiaoming.bot.api.plugin.XiaomingPlugin;
@@ -120,11 +120,7 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
     @Command(CommandWordUtil.PLUGIN_REGEX)
     @RequirePermission("plugin.list")
     public void onLoadedPlugins(final XiaomingUser user) {
-        if (user instanceof GroupXiaomingUser) {
-            ((GroupXiaomingUser) user).sendPrivateMessage(getLoadedPluginString());
-        } else {
-            user.sendMessage(getLoadedPluginString());
-        }
+        user.sendMessage(getLoadedPluginString());
     }
 
     @Command(CommandWordUtil.PLUGIN_REGEX + " {plugin}")
@@ -148,7 +144,7 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
     public void onDebug(final XiaomingUser user) {
         final Config config = getXiaomingBot().getConfig();
         config.setDebug(!config.isDebug());
-        config.save();
+        config.readySave();
         if (config.isDebug()) {
             user.sendMessage("已开启小明的维护状态");
         } else {
@@ -183,11 +179,23 @@ public class CoreCommandExecutor extends CommandExecutorImpl {
         user.sendMessage("小明至今的召唤次数：{}", getXiaomingBot().getCounter().getCallCounter());
     }
 
-    @Command("(异常|exception)")
+    @Command(CommandWordUtil.EXCEPTION_REGEX)
     @RequirePermission("debug.exception")
     public void onThrowException(final XiaomingUser user) {
-        user.sendMessage("小明将尝试抛出异常：XiaomingRuntimeException");
-        throw new XiaomingRuntimeException();
+        final XiaomingRuntimeException exception = new XiaomingRuntimeException();
+        user.sendMessage("小明将尝试抛出异常：{}", exception.getClass().getSimpleName());
+        throw exception;
+    }
+
+    @Command(CommandWordUtil.SAVE_REGEX)
+    @RequirePermission("save")
+    public void onSave(final XiaomingUser user) {
+        final RegularSaveDataManager manager = getXiaomingBot().getRegularSaveDataManager();
+        if (manager.getSaveSet().isEmpty()) {
+            user.sendMessage("当前没有任何文件等待保存哦");
+        } else {
+            manager.save(user);
+        }
     }
 
     @Command("(指令格式|格式|commandformat|format)")

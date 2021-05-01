@@ -1,22 +1,23 @@
 package com.taixue.xiaoming.bot.core.listener.dispatcher;
 
 import com.taixue.xiaoming.bot.api.account.Account;
+import com.taixue.xiaoming.bot.api.account.AccountEvent;
+import com.taixue.xiaoming.bot.api.error.ErrorMessageManager;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.Dispatcher;
 import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.command.executor.CommandManager;
 import com.taixue.xiaoming.bot.api.group.Group;
 import com.taixue.xiaoming.bot.api.listener.dispatcher.user.DispatcherUser;
-import com.taixue.xiaoming.bot.api.listener.dispatcher.user.GroupDispatcherUser;
 import com.taixue.xiaoming.bot.api.listener.interactor.Interactor;
 import com.taixue.xiaoming.bot.api.listener.interactor.InteractorManager;
 import com.taixue.xiaoming.bot.api.plugin.PluginManager;
 import com.taixue.xiaoming.bot.api.plugin.XiaomingPlugin;
 import com.taixue.xiaoming.bot.api.user.GroupXiaomingUser;
 import com.taixue.xiaoming.bot.api.user.PrivateXiaomingUser;
+import com.taixue.xiaoming.bot.core.account.AccountEventImpl;
 import com.taixue.xiaoming.bot.core.base.HostObjectImpl;
-import com.taixue.xiaoming.bot.util.TimeUtil;
+import com.taixue.xiaoming.bot.core.error.ErrorMessageImpl;
 import kotlinx.coroutines.TimeoutCancellationException;
-import love.forte.simbot.api.sender.MsgSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -26,17 +27,29 @@ import java.util.*;
  * @author Chuanwise
  */
 public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObjectImpl implements Dispatcher<UserDataType> {
+    final ErrorMessageManager errorMessageManager = getXiaomingBot().getErrorMessageManager();
+
     @Override
     public boolean onMessage(UserDataType user) {
         final String message = user.getMessage();
         final Account account = getXiaomingBot().getAccountManager().getAccount(user.getQQ());
 
+        // 寻找指令处理器
         CommandExecutor finalCommandExecutor = null;
         try {
             final CommandManager commandManager = getXiaomingBot().getCommandManager();
             for (CommandExecutor executor : commandManager.getCoreCommandExecutors()) {
                 finalCommandExecutor = executor;
                 if (executor.onCommand(user)) {
+                    // 记录日志
+                    final String eventMessage = "执行指令：" + user.getMessage();
+                    getLogger().info(user.getCompleteName() + " " + eventMessage);
+                    if (user instanceof GroupXiaomingUser) {
+                        user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+                    } else {
+                        user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                    }
+                    user.getOrPutAccount().readySave();
                     return true;
                 }
             }
@@ -50,6 +63,11 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                         for (CommandExecutor executor : entry.getValue()) {
                             finalCommandExecutor = executor;
                             if (executor.onCommand(user)) {
+                                // 记录日志
+                                final String eventMessage = "执行插件 " + key.getCompleteName() + " 的指令：" + user.getMessage();
+                                getLogger().info(user.getCompleteName() + " " + eventMessage);
+                                user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+                                user.getOrPutAccount().readySave();
                                 return true;
                             }
                         }
@@ -63,6 +81,11 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                         for (CommandExecutor executor : entry.getValue()) {
                             finalCommandExecutor = executor;
                             if (executor.onCommand(user)) {
+                                // 记录日志
+                                final String eventMessage = "执行插件 " + key.getCompleteName() + " 的指令：" + user.getMessage();
+                                getLogger().info(user.getCompleteName() + " " + eventMessage);
+                                user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                                user.getOrPutAccount().readySave();
                                 return true;
                             }
                         }
@@ -71,18 +94,16 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
             } else {
                 throw new IllegalArgumentException("dispatcher user must be instance of PrivateXiaomingUser or GroupXiaomingUser");
             }
-        } catch (TimeoutCancellationException exception) {
         } catch (Exception exception) {
             exception.printStackTrace();
             user.sendError("抱歉小明遇到了一些错误。这个问题已经上报了，期待更好的小明吧 {}",
                     getXiaomingBot().getEmojiManager().get("happy"));
 
-            if (Objects.nonNull(finalCommandExecutor)) {
-                reportExceptionToLog(user, exception, finalCommandExecutor, user.getMsgSender());
-            }
+            reportExceptionToLog(user, exception);
             return true;
         }
 
+        // 寻找插件直接交互
         XiaomingPlugin finalXiaomingPlugin = null;
         try {
             final PluginManager pluginManager = getXiaomingBot().getPluginManager();
@@ -93,6 +114,11 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                     if ((Objects.isNull(account) || !account.isBlockPlugin(plugin.getName())) &&
                             !group.isUnablePlugin(plugin.getName()) &&
                             plugin.onMessage(user)) {
+                        // 记录日志
+                        final String eventMessage = "与插件 " + plugin.getCompleteName() + " 交互：" + user.getMessage();
+                        getLogger().info(user.getCompleteName() + " " + eventMessage);
+                        user.addEvent(AccountEventImpl.groupEvent((GroupXiaomingUser) user, eventMessage));
+                        user.getOrPutAccount().readySave();
                         return true;
                     }
                 }
@@ -101,39 +127,51 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                     finalXiaomingPlugin = plugin;
                     if ((Objects.isNull(account) || !account.isBlockPlugin(plugin.getName())) &&
                             plugin.onMessage(user)) {
+                        // 记录日志
+                        final String eventMessage = "与插件 " + plugin.getCompleteName() + " 交互：" + user.getMessage();
+                        getLogger().info(user.getCompleteName() + " " + eventMessage);
+                        user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                        user.getOrPutAccount().readySave();
                         return true;
                     }
                 }
             } else {
                 throw new IllegalArgumentException("dispatcher user must be instance of PrivateXiaomingUser or GroupXiaomingUser");
             }
-        } catch (TimeoutCancellationException exception) {
         } catch (Exception exception) {
             exception.printStackTrace();
             user.sendError("抱歉小明遇到了一些错误。这个问题已经上报了，期待更好的小明吧 {}",
                     getXiaomingBot().getEmojiManager().get("happy"));
 
-            if (Objects.nonNull(finalXiaomingPlugin)) {
-                reportExceptionToLog(user, exception, finalXiaomingPlugin, user.getMsgSender());
-            }
+            reportExceptionToLog(user, exception);
             return true;
         }
 
+        // 寻找已有的交互器
         final Interactor lastInteractor = user.getInteractor();
-
-        // 已经有交互器了
         if (Objects.nonNull(lastInteractor)) {
             if (!lastInteractor.isWillExit(user.getQQ())) {
                 try {
+                    // 记录日志
+                    final String eventMessage = "继续与交互器 " + lastInteractor.getClass().getName() + " 交互：" + user.getMessage();
+                    getLogger().info(user.getCompleteName() + " " + eventMessage);
+                    if (user instanceof GroupXiaomingUser) {
+                        user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+                    } else {
+                        user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                    }
+                    user.getOrPutAccount().readySave();
+
+                    // 交互
                     lastInteractor.interact(user);
                 } catch (Exception exception) {
                     exception.printStackTrace();
                     user.sendError("抱歉小明遇到了一些错误。这个问题已经上报了，期待更好的小明吧 {}",
                             getXiaomingBot().getEmojiManager().get("happy"));
 
-                    if (Objects.nonNull(lastInteractor)) {
-                        reportExceptionToLog(user, exception, lastInteractor, user.getMsgSender());
-                    }
+                    reportExceptionToLog(user, exception);
+                    lastInteractor.setWillExit(user.getQQ());
+                    user.setInteractor(null);
                 }
                 return true;
             } else {
@@ -141,6 +179,7 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
             }
         }
 
+        // 寻找新的交互器
         Interactor finalInteractor = null;
         try {
             final InteractorManager manager = getXiaomingBot().getInteractorManager();
@@ -151,51 +190,71 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
                 if (interactor.willInteract(user)) {
                     user.setInteractor(interactor);
                     interactor.interact(user);
+                    // 记录日志
+                    final String eventMessage = "初次与内核交互器 " + interactor.getClass().getName() + " 交互：" + user.getMessage();
+                    getLogger().info(user.getCompleteName() + " " + eventMessage);
+                    if (user instanceof GroupXiaomingUser) {
+                        user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+                    } else {
+                        user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                    }
+                    user.getOrPutAccount().readySave();
                     return true;
                 }
             }
-            if (Objects.isNull(finalInteractor)) {
-                if (user instanceof GroupXiaomingUser) {
-                    final Group group = getXiaomingBot().getGroupManager().forGroup(((GroupXiaomingUser) user).getGroup());
-                    for (Map.Entry<XiaomingPlugin, Set<Interactor>> entry : pluginInteractors.entrySet()) {
-                        if (!group.isUnablePlugin(entry.getKey().getName()) &&
-                                (Objects.isNull(account) || !account.isBlockPlugin(entry.getKey().getName()))) {
-                            for (Interactor interactor : entry.getValue()) {
-                                finalInteractor = interactor;
-                                if (interactor.willInteract(user)) {
-                                    user.setInteractor(interactor);
-                                    interactor.interact(user);
-                                    return true;
-                                }
+            if (user instanceof GroupXiaomingUser) {
+                final Group group = getXiaomingBot().getGroupManager().forGroup(((GroupXiaomingUser) user).getGroup());
+                for (Map.Entry<XiaomingPlugin, Set<Interactor>> entry : pluginInteractors.entrySet()) {
+                    if (!group.isUnablePlugin(entry.getKey().getName()) &&
+                            (Objects.isNull(account) || !account.isBlockPlugin(entry.getKey().getName()))) {
+                        for (Interactor interactor : entry.getValue()) {
+                            finalInteractor = interactor;
+                            if (interactor.willInteract(user)) {
+                                // 记录日志
+                                final String eventMessage = "初次与插件 " + entry.getKey().getCompleteName() + " 交互器 " + interactor.getClass().getName() + " 交互：" + user.getMessage();
+                                getLogger().info(user.getCompleteName() + " " + eventMessage);
+                                user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+                                user.getOrPutAccount().readySave();
+
+                                user.setInteractor(interactor);
+                                interactor.interact(user);
+                                return true;
                             }
                         }
                     }
-                } else if (user instanceof PrivateXiaomingUser) {
-                    for (Map.Entry<XiaomingPlugin, Set<Interactor>> entry : pluginInteractors.entrySet()) {
-                        if ((Objects.isNull(account) || !account.isBlockPlugin(entry.getKey().getName()))) {
-                            for (Interactor interactor : entry.getValue()) {
-                                finalInteractor = interactor;
-                                if (interactor.willInteract(user)) {
-                                    user.setInteractor(interactor);
-                                    interactor.interact(user);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    throw new IllegalArgumentException("dispatcher user must be instance of PrivateXiaomingUser or GroupXiaomingUser");
                 }
+            } else if (user instanceof PrivateXiaomingUser) {
+                for (Map.Entry<XiaomingPlugin, Set<Interactor>> entry : pluginInteractors.entrySet()) {
+                    if ((Objects.isNull(account) || !account.isBlockPlugin(entry.getKey().getName()))) {
+                        for (Interactor interactor : entry.getValue()) {
+                            finalInteractor = interactor;
+                            if (interactor.willInteract(user)) {
+                                // 记录日志
+                                final String eventMessage = "初次与 " + entry.getKey().getCompleteName() + " 交互器 " + interactor.getClass().getName() + " 交互：" + user.getMessage();
+                                getLogger().info(user.getCompleteName() + " " + eventMessage);
+                                user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+                                user.getOrPutAccount().readySave();
+
+                                user.setInteractor(interactor);
+                                interactor.interact(user);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("dispatcher user must be instance of PrivateXiaomingUser or GroupXiaomingUser");
             }
-        } catch (TimeoutCancellationException exception) {
         } catch (Exception exception) {
             exception.printStackTrace();
             user.sendError("抱歉小明遇到了一些错误。这个问题已经上报了，期待更好的小明吧 {}",
                     getXiaomingBot().getEmojiManager().get("happy"));
 
+            reportExceptionToLog(user, exception);
             if (Objects.nonNull(finalInteractor)) {
-                reportExceptionToLog(user, exception, finalInteractor, user.getMsgSender());
+                finalInteractor.setWillExit(user.getQQ());
             }
+            user.setInteractor(null);
             return true;
         }
 
@@ -211,75 +270,31 @@ public class DispatcherImpl<UserDataType extends DispatcherUser> extends HostObj
 
     @Override
     public void reportExceptionToLog(@NotNull final DispatcherUser user,
-                                     @NotNull final Exception exception,
-                                     @NotNull final XiaomingPlugin plugin,
-                                     @NotNull final MsgSender msgSender) {
-        StringBuilder builder = new StringBuilder()
-                .append("【异常】").append("\n");
+                                     @NotNull final Exception exception) {
+        // 记录日志
+        final String eventMessage = "触发异常：" + exception;
+        if (user instanceof GroupXiaomingUser) {
+            user.addEvent(AccountEventImpl.groupEvent(((GroupXiaomingUser) user), eventMessage));
+        } else {
+            user.addEvent(AccountEventImpl.privateEvent(eventMessage));
+        }
+        getLogger().error(user.getCompleteName() + " " + eventMessage);
 
-        builder.append("插件 ").append(plugin.getCompleteName()).append(" 出现异常。").append("\n")
-                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n");
+        // 通知日志群
+        reportToLog("出现一条新的异常信息，输入 #近期异常 以查看");
+        final Throwable cause = exception.getCause();
+        final String message = Objects.nonNull(cause) ? cause.toString() : exception.toString();
 
         if (user instanceof GroupXiaomingUser) {
-            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
+            errorMessageManager.addErrorMessage(new ErrorMessageImpl(user.getQQ(),
+                    user.getName(), ((GroupXiaomingUser) user).getGroup(), ((GroupXiaomingUser) user).getGroupInfo().getGroupName(), message, user.getRecentInputs()));
+        } else if (user instanceof PrivateXiaomingUser) {
+            errorMessageManager.addErrorMessage(new ErrorMessageImpl(user.getQQ(), user.getName(), message, user.getRecentInputs()));
+        } else {
+            throw new IllegalArgumentException("dispatcher user must be instance of GroupXiaomingUser or PrivateXiaomingUser");
         }
-
-        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                .append("输入：").append(user.getMessage()).append("\n")
-                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-
-        reportToLog(builder.toString());
         exception.printStackTrace();
-    }
-
-    @Override
-    public void reportExceptionToLog(@NotNull final DispatcherUser user,
-                                     @NotNull final Exception exception,
-                                     @NotNull final Interactor interactor,
-                                     @NotNull final MsgSender msgSender) {
-        StringBuilder builder = new StringBuilder()
-                .append("【异常】").append("\n");
-
-        builder.append("交互器 ").append(interactor.getClass().getName()).append(" 出现异常。").append("\n")
-                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n");
-
-        if (user instanceof GroupXiaomingUser) {
-            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
-        }
-
-        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                .append("输入：").append(user.getMessage()).append("\n")
-                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-
-        reportToLog(builder.toString());
-        exception.printStackTrace();
-    }
-
-    @Override
-    public void reportExceptionToLog(@NotNull final DispatcherUser user,
-                                     @NotNull final Exception exception,
-                                     @NotNull final CommandExecutor executor,
-                                     @NotNull final MsgSender msgSender) {
-        StringBuilder builder = new StringBuilder()
-                .append("【异常】").append("\n");
-
-        builder.append("指令处理器 ").append(executor.getClass().getName()).append(" 出现异常。").append("\n")
-                .append("类型：").append(exception.getClass().getSimpleName()).append("\n")
-                .append("信息：").append(Objects.isNull(exception.getMessage()) ? "（无）" : exception.getMessage()).append("\n")
-                .append("注册形式：").append(Objects.isNull(executor.getPlugin()) ? "内核" : executor.getPlugin().getName()).append("\n");
-
-        if (user instanceof GroupXiaomingUser) {
-            builder.append("群组：").append(((GroupDispatcherUser) user).getGroupString()).append("\n");
-        }
-
-        builder.append("触发人：").append(user.getAccountInfo().getAccountRemarkOrNickname()).append("（").append(user.getQQString()).append("）").append("\n")
-                .append("输入：").append(user.getMessage()).append("\n")
-                .append("时间：").append(TimeUtil.FORMAT.format(System.currentTimeMillis())).append("\n");
-
-        reportToLog(builder.toString());
-        exception.printStackTrace();
+        errorMessageManager.readySave();
     }
 
     @Override

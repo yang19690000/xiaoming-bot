@@ -4,6 +4,7 @@ import com.taixue.xiaoming.bot.api.account.Account;
 import com.taixue.xiaoming.bot.api.account.AccountEvent;
 import com.taixue.xiaoming.bot.core.data.JsonFileSavedData;
 import com.taixue.xiaoming.bot.util.JsonSerializerUtil;
+import net.mamoe.mirai.event.events.UserEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -15,7 +16,7 @@ import java.util.*;
 public class AccountImpl extends JsonFileSavedData implements Account {
     private long qq;
     private String alias;
-    private List<AccountEvent> commands = new ArrayList<>();
+    private List<AccountEvent> events = new ArrayList<>();
     private List<AccountEvent> histories = new ArrayList<>();
     private Set<String> blockPlugins = new HashSet<>();
     private Map<String, Object> properties = new HashMap<>();
@@ -29,7 +30,7 @@ public class AccountImpl extends JsonFileSavedData implements Account {
     public void putProperty(final String key,
                             final Object value) {
         properties.put(key, value);
-        save();
+        readySave();
     }
 
     @Override
@@ -70,15 +71,8 @@ public class AccountImpl extends JsonFileSavedData implements Account {
         this.properties = properties;
     }
 
-    @Override
-    public void addGroupMessage(final long group,
-                                final String message) {
-        commands.add(AccountEventImpl.groupEvent(group, message));
-    }
-
-    @Override
-    public void addPrivateMessage(final String message) {
-        commands.add(AccountEventImpl.privateEvent("执行指令：" + message));
+    public void addEvent(AccountEvent event) {
+        events.add(event);
     }
 
     @Override
@@ -102,13 +96,13 @@ public class AccountImpl extends JsonFileSavedData implements Account {
     }
 
     @Override
-    public List<AccountEvent> getCommands() {
-        return commands;
+    public List<AccountEvent> getEvents() {
+        return events;
     }
 
     @Override
-    public void setCommands(List<AccountEvent> commands) {
-        this.commands = commands;
+    public void setEvents(List<AccountEvent> events) {
+        this.events = events;
     }
 
     @Override
@@ -123,10 +117,23 @@ public class AccountImpl extends JsonFileSavedData implements Account {
 
     @Override
     public void addHistory(final AccountEvent event) {
-        commands.add(event);
+        events.add(event);
     }
 
     public void setBlockPlugins(Set<String> blockPlugins) {
         this.blockPlugins = blockPlugins;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AccountImpl account = (AccountImpl) o;
+        return qq == account.qq;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(qq);
     }
 }

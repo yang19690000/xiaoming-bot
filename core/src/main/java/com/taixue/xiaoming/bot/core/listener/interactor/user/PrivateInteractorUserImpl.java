@@ -23,11 +23,6 @@ public class PrivateInteractorUserImpl extends InteractorUserImpl implements Pri
         return getXiaomingBot().getPermissionManager().userHasPermission(getQQ(), node);
     }
 
-    @Override
-    public String getName() {
-        return getQQString();
-    }
-
     @Override public void setPrivateMsg(PrivateMsg privateMsg) {
         this.privateMsg = privateMsg;
     }

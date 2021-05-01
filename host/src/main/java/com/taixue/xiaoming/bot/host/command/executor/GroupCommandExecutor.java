@@ -1,7 +1,6 @@
 package com.taixue.xiaoming.bot.host.command.executor;
 
 import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
-import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.group.Group;
@@ -10,7 +9,6 @@ import com.taixue.xiaoming.bot.api.user.GroupXiaomingUser;
 import com.taixue.xiaoming.bot.api.user.XiaomingUser;
 import com.taixue.xiaoming.bot.core.command.executor.CommandExecutorImpl;
 import com.taixue.xiaoming.bot.util.CommandWordUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.Objects;
@@ -97,7 +95,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
         } else {
             user.sendMessage("成功移除小明响应群：", getGroupName(group));
             groupManager.getGroups().remove(group);
-            groupManager.save();
+            groupManager.readySave();
         }
     }
 
@@ -159,27 +157,23 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
             user.sendError("{}已经有这个标记了哦", getGroupName(group));
         } else {
             tags.add(tag);
-            groupManager.save();
+            groupManager.readySave();
             user.sendMessage("成功为{}添加了新的标记：{}", getGroupName(group), tag);
         }
     }
 
-    @Command(CommandWordUtil.GROUP_REGEX + TAG_REGEX + " " + CommandWordUtil.NEW_REGEX + " {tag}")
+    @Command(CommandWordUtil.NEW_REGEX + CommandWordUtil.GROUP_REGEX + TAG_REGEX + " " + " {tag}")
     @RequirePermission("group.tag.add")
-    public void onAddThisGroupTag(final GroupXiaomingUser user,
-                                  @CommandParameter("tag") final String tag) {
-        final Group group = groupManager.forGroup(user.getGroup());
-        if (Objects.isNull(group)) {
-            user.sendError("意外：本群不是小明的响应群");
-            return;
-        }
+    public void onAddGroupTag(final GroupXiaomingUser user,
+                              @CommandParameter("tag") final String tag) {
+        final Group group = groupManager.getGroups().get(user.getGroup());
         final Set<String> tags = group.getTags();
         if (tags.contains(tag)) {
             user.sendError("本群已经有这个标记了哦");
         } else {
             tags.add(tag);
-            groupManager.save();
-            user.sendMessage("成功本群添加了新的标记：{}", tag);
+            groupManager.readySave();
+            user.sendMessage("成功为本群添加了新的标记：{}", tag);
         }
     }
 
@@ -192,7 +186,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
             user.sendError("本群已经屏蔽了插件{}", plugin);
         } else {
             group.addBlockPlugin(plugin);
-            groupManager.save();
+            groupManager.readySave();
             if (getXiaomingBot().getPluginManager().isLoaded(plugin)) {
                 user.sendMessage("成功在本群屏蔽了插件{}", plugin);
             } else {
@@ -208,7 +202,7 @@ public class GroupCommandExecutor extends CommandExecutorImpl {
         Group group = groupManager.forGroup(user.getGroup());
         if (group.isUnablePlugin(plugin)) {
             group.getBlockPlugins().remove(plugin);
-            groupManager.save();
+            groupManager.readySave();
             if (getXiaomingBot().getPluginManager().isLoaded(plugin)) {
                 user.sendMessage("成功在本群取消屏蔽插件{}", plugin);
             } else {

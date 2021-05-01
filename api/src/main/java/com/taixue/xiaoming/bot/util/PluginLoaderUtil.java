@@ -23,7 +23,7 @@ public class PluginLoaderUtil {
     public static ClassLoader urlClassLoader(final File jarFile,
                                              final ClassLoader father)
             throws MalformedURLException {
-        return URLClassLoader.newInstance(new URL[]{jarFile.toURL()}, father);
+        return URLClassLoader.newInstance(new URL[]{jarFile.toURI().toURL()}, father);
     }
 
     /**

@@ -1,7 +1,6 @@
 package com.taixue.xiaoming.bot.host.command.executor;
 
 import com.taixue.xiaoming.bot.api.annotation.RequirePermission;
-import com.taixue.xiaoming.bot.api.command.executor.CommandExecutor;
 import com.taixue.xiaoming.bot.api.annotation.Command;
 import com.taixue.xiaoming.bot.api.annotation.CommandParameter;
 import com.taixue.xiaoming.bot.api.emoji.EmojiManager;
@@ -64,6 +63,6 @@ public class EmojiCommandExecutor extends CommandExecutorImpl {
         }
         emojiSet.add(emoji);
         user.sendMessage("成功添加了{}类型表情：{}", key, emoji);
-        emojiManager.save();
+        emojiManager.readySave();
     }
 }

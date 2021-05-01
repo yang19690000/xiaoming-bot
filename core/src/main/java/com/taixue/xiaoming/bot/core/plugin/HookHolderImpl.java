@@ -31,7 +31,7 @@ public class HookHolderImpl implements HookHolder {
             return sponsor;
         }
         else {
-            throw new IllegalArgumentException("plugin " + plugin + " doesn't related this hook holder");
+            throw new IllegalArgumentException("plugin " + plugin + " doesn't related this com.taixue.xiaoming.bot.host.hook holder");
         }
     }
 }

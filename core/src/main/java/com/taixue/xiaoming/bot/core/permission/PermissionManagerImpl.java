@@ -119,23 +119,17 @@ public class PermissionManagerImpl extends JsonFileSavedData implements Permissi
     @Override
     public boolean removeUserPermission(long qq, String node) {
         if (userHasPermission(qq, node)) {
-            PermissionUserNode userNode = null;
             final Account account = XiaomingBot.getInstance().getAccountManager().getOrPutAccount(qq);
+            final PermissionUserNode userNode = getOrPutUserNode(account);
 
-            if (Objects.isNull(userNode)) {
-                userNode = new PermissionUserNodeImpl();
-                userNode.setGroup(DEFAULT_PERMISSION_GROUP_NAME);
-                account.putProperty("permission", userNode);
-            }
             userNode.getPermissions().remove(node);
             if (userHasPermission(qq, node)) {
                 List<String> permissions = new ArrayList<>();
                 permissions.add('-' + node);
-                if (Objects.nonNull(userNode.getPermissions())) {
-                    permissions.addAll(userNode.getPermissions());
-                }
+                permissions.addAll(userNode.getPermissions());
                 userNode.setPermissions(permissions);
             }
+            account.readySave();
             return true;
         } else {
             return false;

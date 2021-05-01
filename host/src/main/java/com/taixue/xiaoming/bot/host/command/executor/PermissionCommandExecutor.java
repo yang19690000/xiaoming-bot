@@ -57,7 +57,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
             superGroups.add(PermissionManager.DEFAULT_PERMISSION_GROUP_NAME);
             permissionGroup.setSuperGroups(superGroups);
             permissionManager.addGroup(name, permissionGroup);
-            permissionManager.save();
+            permissionManager.readySave();
             user.sendMessage("已增加新的权限组：{}，小明已经将其继承自 {} 了",
                     name, getPermissionGroupName(PermissionManager.DEFAULT_PERMISSION_GROUP_NAME));
         }
@@ -77,7 +77,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
         } else {
             final Account account = getXiaomingBot().getAccountManager().getOrPutAccount(qq);
             permissionManager.getOrPutUserNode(account).setGroup(group);
-            account.save();
+            account.readySave();
             user.sendMessage("成功设置用户的权限组为：{}", getPermissionGroupName(group));
         }
     }
@@ -93,7 +93,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
         if (Objects.nonNull(group)) {
             user.sendMessage("已删除权限组 {}", getPermissionGroupName(name));
             permissionManager.removeGroup(name);
-            permissionManager.save();
+            permissionManager.readySave();
         } else {
             user.sendMessage("小明找不到权限组 {} (ノへ￣、)", getPermissionGroupName(name));
         }
@@ -111,7 +111,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
         if (Objects.nonNull(group)) {
             String elderAlias = group.getAlias();
             group.setAlias(alias);
-            permissionManager.save();
+            permissionManager.readySave();
             if (Objects.isNull(elderAlias)) {
                 user.sendMessage("已为权限组{}创建了备注：{}", name, alias);
             } else {
@@ -163,13 +163,13 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
     public void onGiveUserPermission(final XiaomingUser user,
                                      @CommandParameter("qq") final long qq,
                                      @CommandParameter("node") String node) {
-        if (!verifyPermissionAndReport(user, "permission.user.add." + node)) {
+        if (!user.checkPermissionAndReport("permission.user.add." + node)) {
             return;
         }
         final Account account = getXiaomingBot().getAccountManager().getOrPutAccount(qq);
         final PermissionUserNode userNode = permissionManager.getOrPutUserNode(account);
         userNode.addPermission(node);
-        account.save();
+        account.readySave();
         user.sendMessage("已授予 {} 权限节点：{}", qq, node);
     }
 
@@ -188,7 +188,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
                 user.sendMessage("权限组 {} 已经具有权限：{} 了", getPermissionGroupName(name), node);
             } else {
                 group.addPermission(node);
-                permissionManager.save();
+                permissionManager.readySave();
                 user.sendMessage("成功为权限组 {} 增加了权限：{}", getPermissionGroupName(name), node);
             }
         } else {
@@ -253,7 +253,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
     public void onRemoveUserPermission(final QQXiaomingUser user,
                                        @CommandParameter("qq") final long qq,
                                        @CommandParameter("node") String node) {
-        if (!verifyPermissionAndReport(user, "permission.user.remove." + node)) {
+        if (!user.checkPermissionAndReport("permission.user.remove." + node)) {
             return;
         }
         final Account account = user.getOrPutAccount();
@@ -286,7 +286,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
                 user.sendMessage("权限组 {} 并不具有 {} 的权限哦", getPermissionGroupName(name), node);
             } else {
                 group.removePermission(node);
-                permissionManager.save();
+                permissionManager.readySave();
                 if (permissionManager.groupHasPermission(group, node)) {
                     List<String> permissions = new ArrayList<>();
                     permissions.add('-' + node);
@@ -358,7 +358,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
             user.sendError("{}已经是{}的父类了，无法相互继承", getPermissionGroupName(sonGroupName), getPermissionGroupName(superGroupName));
         } else {
             sonGroup.getSuperGroups().add(superGroupName);
-            permissionManager.save();
+            permissionManager.readySave();
             user.sendMessage("成功令{}继承了{}的所有权限", getPermissionGroupName(sonGroupName), getPermissionGroupName(superGroupName));
         }
     }
@@ -386,7 +386,7 @@ public class PermissionCommandExecutor extends CommandExecutorImpl {
 
         if (permissionManager.isSuper(superGroupName, sonGroupName)) {
             sonGroup.getSuperGroups().remove(superGroupName);
-            permissionManager.save();
+            permissionManager.readySave();
             user.sendMessage("成功取消了{}派生{}的联系", getPermissionGroupName(superGroupName), getPermissionGroupName(sonGroupName));
         } else {
 

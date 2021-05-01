@@ -34,7 +34,7 @@ public abstract class FileSavedDataImpl implements FileSavedData {
 
     @Override
     protected void finalize() throws Throwable {
-        save();
+        readySave();
     }
 
     @Override

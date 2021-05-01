@@ -20,6 +20,6 @@ public interface AccountManager extends XiaomingObject {
     @NotNull
     File getDirectory();
 
-    @NotNull
+    @Nullable
     Account loadAccount(final File file);
 }

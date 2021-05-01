@@ -16,7 +16,8 @@ public abstract class UrlManagerImpl extends JsonFileSavedData implements UrlMan
 
     @Override
     public String requireRecordedUrl(final String url) {
-        return contains(url) ? url : null;
+        urls.add(url);
+        return url;
     }
 
     public Set<String> getUrls() {

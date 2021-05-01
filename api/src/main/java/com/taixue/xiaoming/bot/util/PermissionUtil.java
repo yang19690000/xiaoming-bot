@@ -8,11 +8,9 @@ public class PermissionUtil {
     public static int accessable(String node, String give) {
         if (node.equals(give)) {
             return 1;
-        }
-        if (node.startsWith("-")) {
+        } else if (node.equals("-" + give)) {
             return -1;
-        }
-        if (node.endsWith("*") && give.startsWith(node.substring(0, node.lastIndexOf("*")))) {
+        } else if (node.endsWith("*") && give.startsWith(node.substring(0, node.lastIndexOf("*")))) {
             return 1;
         }
         return 0;

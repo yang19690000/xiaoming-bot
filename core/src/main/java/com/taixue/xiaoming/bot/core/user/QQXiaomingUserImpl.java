@@ -15,6 +15,6 @@ public abstract class QQXiaomingUserImpl extends XiaomingUserImpl implements QQX
 
     @Override
     public String getName() {
-        return getQQString();
+        return getAccountInfo().getAccountRemarkOrNickname();
     }
 }

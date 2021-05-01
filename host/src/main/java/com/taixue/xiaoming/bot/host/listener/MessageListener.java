@@ -59,7 +59,7 @@ public class MessageListener extends HostObjectImpl {
                         "好好休息一下吧 " + getXiaomingBot().getEmojiManager().get("happy") + "，" +
                         TimeUtil.after(userCallRecords.getEarlyestRecord(), config.getDeltaNoticeTime()) + "就可以继续在群里召唤我啦");
                 privateCallLimiter.setNoticed(qq);
-                callLimitManager.save();
+                callLimitManager.readySave();
             }
             if (privateCallLimiter.uncallable(qq)) {
                 return;
@@ -76,17 +76,23 @@ public class MessageListener extends HostObjectImpl {
 
         final PrivateDispatcherUser privateDispatcherUser = (PrivateDispatcherUser) user;
         privateDispatcherUser.setPrivateMsg(privateMsg);
+
+        // 试探性地增加当前输入
+        user.addRecentInput();
+
         if (privateDispatcher.onMessage(privateDispatcherUser)) {
             getXiaomingBot().getCounter().increaseCallCounter();
 
             // 保存本次输入
             final Account account = privateDispatcherUser.getOrPutAccount();
-            account.addPrivateMessage(privateDispatcherUser.getMessage());
-            account.save();
+            account.readySave();
 
             // 保存本次调用
             privateCallLimiter.addCallRecord(qq);
-            callLimitManager.save();
+            callLimitManager.readySave();
+        } else {
+            // 本次调用没有生效所以清空
+            user.getRecentInputs().clear();
         }
     }
 
@@ -116,7 +122,7 @@ public class MessageListener extends HostObjectImpl {
                 }
 
                 groupCallLimiter.setNoticed(qq);
-                callLimitManager.save();
+                callLimitManager.readySave();
             }
             if (groupCallLimiter.uncallable(qq)) {
                 return;
@@ -134,17 +140,20 @@ public class MessageListener extends HostObjectImpl {
         final GroupDispatcherUser groupDispatcherUser = (GroupDispatcherUser) user;
         groupDispatcherUser.setGroupMsg(groupMsg);
 
+        user.addRecentInput();
+
         if (groupDispatcher.onMessage(groupDispatcherUser)) {
             getXiaomingBot().getCounter().increaseCallCounter();
 
             // 保存本次输入
             final Account account = groupDispatcherUser.getOrPutAccount();
-            account.addGroupMessage(groupDispatcherUser.getGroup(), groupDispatcherUser.getMessage());
-            account.save();
+            account.readySave();
 
             // 保存本次调用
             groupCallLimiter.addCallRecord(qq);
-            callLimitManager.save();
+            callLimitManager.readySave();
+        } else {
+            user.getRecentInputs().clear();
         }
     }
 
@@ -187,7 +196,7 @@ public class MessageListener extends HostObjectImpl {
             else {
                 groups.put(key, new GroupImpl(groupMsg.getGroupInfo()));
                 msgSender.SENDER.sendGroupMsg(groupMsg, "成功将本群设置为小明响应群：" + key);
-                groupManager.save();
+                groupManager.readySave();
             }
         } else {
             msgSender.SENDER.sendGroupMsg(groupMsg, "小明不能帮你做这件事哦，因为你缺少权限：" + permissionNode);
@@ -214,7 +223,7 @@ public class MessageListener extends HostObjectImpl {
                     final Group value = new GroupImpl(msgSender.GETTER.getGroupInfo(groupString));
                     groups.put(key, value);
                     msgSender.SENDER.sendGroupMsg(groupMsg, "成功添加了新的小明响应群：" + value.getAlias());
-                    groupManager.save();
+                    groupManager.readySave();
                 } catch (Exception exception) {
                     msgSender.SENDER.sendGroupMsg(groupMsg, "无法添加该群为小明的响应群，可能是这个群不存在、小明还不在群里或缓存还未刷新");
                 }
